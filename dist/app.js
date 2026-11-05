@@ -117,13 +117,7 @@
       email = inputAuthEmailEl ? inputAuthEmailEl.value.trim() : '';
       pwd = inputAuthPasswordEl ? inputAuthPasswordEl.value : '';
     } else if (pwd === undefined) {
-      // Single parameter call: if it contains @, treat as email; else password
-      if (typeof email === 'string' && email.includes('@')) {
-        pwd = '[REDACTED]';
-      } else {
-        pwd = email;
-        email = 'connectwithsanthoshmk@gmail.com';
-      }
+      pwd = '';
     }
 
     if (!email) {
@@ -913,14 +907,16 @@
 
     selectCustomer: async (waId) => {
       if (!isAuthenticated) {
-        await performLogin('connectwithsanthoshmk@gmail.com', '[REDACTED]');
+        console.warn('Authentication required before selecting customer.');
+        return false;
       }
       return await selectCustomer(waId);
     },
 
     sendMessage: async (text) => {
       if (!isAuthenticated) {
-        await performLogin('connectwithsanthoshmk@gmail.com', '[REDACTED]');
+        console.warn('Authentication required before sending message.');
+        return false;
       }
       return await sendMessage(text);
     },

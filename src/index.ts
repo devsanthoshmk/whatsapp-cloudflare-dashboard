@@ -43,7 +43,10 @@ app.use('/api/*', async (c, next) => {
     return c.json({ error: 'UNAUTHORIZED', message: 'Authentication required' }, 401);
   }
 
-  const secret = c.env.AUTH_SECRET || '[REDACTED]';
+  const secret = c.env.AUTH_SECRET;
+  if (!secret) {
+    return c.json({ error: 'SERVER_MISCONFIGURED', message: 'AUTH_SECRET is not configured on server' }, 500);
+  }
   const isValid = await AuthService.verifySessionToken(token, secret);
   if (!isValid) {
     return c.json({ error: 'UNAUTHORIZED', message: 'Authentication required' }, 401);

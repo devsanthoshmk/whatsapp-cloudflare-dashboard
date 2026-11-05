@@ -42,19 +42,26 @@ export async function handleAuthLogin(c: Context<{ Bindings: Env }>) {
 
   const rawEmail = body.email || '';
   const normalizedEmail = rawEmail.trim().toLowerCase();
-  const adminEmail = (c.env.ADMIN_EMAIL || 'connectwithsanthoshmk@gmail.com').trim().toLowerCase();
-  const adminPassword = c.env.ADMIN_PASSWORD || '[REDACTED]';
+  const adminEmail = (c.env.ADMIN_EMAIL || '').trim().toLowerCase();
+  const adminPassword = c.env.ADMIN_PASSWORD;
+
+  if (!adminPassword) {
+    return c.json({ error: 'SERVER_MISCONFIGURED', message: 'ADMIN_PASSWORD is not configured on server' }, 500);
+  }
 
   if (!normalizedEmail) {
     return c.json({ error: 'VALIDATION_ERROR', message: 'Email is required' }, 400);
   }
 
-  if (normalizedEmail === adminEmail) {
+  if (adminEmail && normalizedEmail === adminEmail) {
     if (!body.password || body.password !== adminPassword) {
       return c.json({ error: 'INVALID_CREDENTIALS', message: 'Incorrect password' }, 401);
     }
 
-    const secret = c.env.AUTH_SECRET || '[REDACTED]';
+    const secret = c.env.AUTH_SECRET;
+    if (!secret) {
+      return c.json({ error: 'SERVER_MISCONFIGURED', message: 'AUTH_SECRET is not configured on server' }, 500);
+    }
     const token = await AuthService.createSessionToken({ email: normalizedEmail, role: 'admin' }, secret);
 
     c.header('Set-Cookie', `session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`);
@@ -79,7 +86,10 @@ export async function handleAuthLogin(c: Context<{ Bindings: Env }>) {
       return c.json({ error: 'INVALID_CREDENTIALS', message: 'Incorrect password' }, 401);
     }
 
-    const secret = c.env.AUTH_SECRET || '[REDACTED]';
+    const secret = c.env.AUTH_SECRET;
+    if (!secret) {
+      return c.json({ error: 'SERVER_MISCONFIGURED', message: 'AUTH_SECRET is not configured on server' }, 500);
+    }
     const token = await AuthService.createSessionToken({ email: normalizedEmail, role: 'member' }, secret);
 
     c.header('Set-Cookie', `session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`);
@@ -161,7 +171,10 @@ export async function handleAuthCheck(c: Context<{ Bindings: Env }>) {
     return c.json({ authenticated: false });
   }
 
-  const secret = c.env.AUTH_SECRET || '[REDACTED]';
+  const secret = c.env.AUTH_SECRET;
+  if (!secret) {
+    return c.json({ authenticated: false, error: 'AUTH_SECRET not configured' }, 500);
+  }
   const authenticated = await AuthService.verifySessionToken(token, secret);
   if (!authenticated) {
     return c.json({ authenticated: false });
