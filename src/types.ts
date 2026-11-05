@@ -66,6 +66,43 @@ export interface UsageStats {
   walletBalance: number;
   currency: string;
   r2: R2StatsSummary;
+  lastSyncAt?: number;
+  providerStatus?: string;
+}
+
+export interface SendMessagePayload {
+  to: string;
+  text?: string;
+  type?: 'text' | 'image' | 'document' | 'audio';
+  media_url?: string;
+  media_filename?: string;
+  caption?: string;
+}
+
+export interface BatchSendPayload {
+  recipients: string[];
+  text?: string;
+  type?: 'text' | 'image' | 'document' | 'audio';
+  media_url?: string;
+  media_filename?: string;
+  caption?: string;
+}
+
+export interface BatchSendResult {
+  total: number;
+  sentCount: number;
+  failedCount: number;
+  results: Array<{
+    waId: string;
+    success: boolean;
+    messageId?: string;
+    error?: string;
+  }>;
+}
+
+export interface ForwardMessagePayload {
+  messageId: string;
+  targetWaIds: string[];
 }
 
 export interface WaitlistEntry {

@@ -266,6 +266,37 @@
     }
   }
 
+  // Update Waitlist Status
+  async function updateWaitlistStatus(id, newStatus) {
+    try {
+      const res = await nativeFetch(`/api/waitlist/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(`Failed to update status: ${data.message || data.error || 'Server error'}`);
+        return false;
+      }
+      // Update in-memory entry
+      const item = currentWaitlist.find(w => w.id === id);
+      if (item) {
+        item.status = newStatus;
+      }
+      // Recalculate pending badge count
+      const pendingCount = currentWaitlist.filter(w => w.status === 'pending').length;
+      if (badgeWaitlistCountEl) {
+        badgeWaitlistCountEl.textContent = pendingCount;
+      }
+      renderWaitlist();
+      return true;
+    } catch (err) {
+      alert(`Error updating status: ${err.message}`);
+      return false;
+    }
+  }
+
   // Render Waitlist Table
   function renderWaitlist() {
     if (!waitlistListEl) return;
@@ -285,14 +316,34 @@
       const tr = document.createElement('tr');
       const firstSeen = new Date(entry.created_at * 1000).toLocaleString();
       const lastAttempt = new Date(entry.last_attempt_at * 1000).toLocaleString();
+      const statusBadgeClass = `badge-status-${entry.status || 'pending'}`;
 
       tr.innerHTML = `
         <td class="waitlist-email">${escapeHtml(entry.email)}</td>
-        <td><span class="badge badge-warning" style="font-size: 0.72rem;">${escapeHtml(entry.status || 'pending')}</span></td>
+        <td><span class="badge ${statusBadgeClass}" style="font-size: 0.72rem;">${escapeHtml(entry.status || 'pending')}</span></td>
         <td class="waitlist-attempts">${entry.attempt_count} attempt${entry.attempt_count > 1 ? 's' : ''}</td>
         <td class="waitlist-time">${firstSeen}</td>
         <td class="waitlist-time">${lastAttempt}</td>
+        <td>
+          <div class="btn-action-group">
+            <button id="btn-approve-${entry.id}" class="btn-action btn-action-approve" data-id="${entry.id}" data-action="approved" title="Approve access" ${entry.status === 'approved' ? 'disabled style="opacity:0.4;cursor:default"' : ''}>Approve</button>
+            <button id="btn-reject-${entry.id}" class="btn-action btn-action-reject" data-id="${entry.id}" data-action="rejected" title="Reject access" ${entry.status === 'rejected' ? 'disabled style="opacity:0.4;cursor:default"' : ''}>Reject</button>
+            <button id="btn-archive-${entry.id}" class="btn-action btn-action-archive" data-id="${entry.id}" data-action="archived" title="Archive entry" ${entry.status === 'archived' ? 'disabled style="opacity:0.4;cursor:default"' : ''}>Archive</button>
+          </div>
+        </td>
       `;
+
+      tr.querySelectorAll('.btn-action').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute('data-id');
+          const action = btn.getAttribute('data-action');
+          if (id && action) {
+            updateWaitlistStatus(id, action);
+          }
+        });
+      });
+
       waitlistListEl.appendChild(tr);
     });
   }
@@ -687,13 +738,13 @@
         out += '+-----------------------------------------------------------------------------------------+\n';
         out += '| [#btn-view-chat] [Messages] | *[#btn-view-waitlist] [Waitlist Requests]                 |\n';
         out += '|-----------------------------------------------------------------------------------------|\n';
-        out += '| EMAIL                              | STATUS    | ATTEMPTS | FIRST SEEN | LAST ATTEMPT   |\n';
-        out += '|------------------------------------+-----------+----------+------------+----------------|\n';
+        out += '| EMAIL                             | STATUS    | ATTEMPTS | ACTIONS                      |\n';
+        out += '|-----------------------------------+-----------+----------+------------------------------|\n';
         if (currentWaitlist.length === 0) {
           out += '| (No waitlisted accounts yet)                                                            |\n';
         } else {
           currentWaitlist.slice(0, 5).forEach(w => {
-            out += `| ${w.email.padEnd(34)} | ${w.status.padEnd(9)} | ${String(w.attempt_count).padEnd(8)} | Recent     | Just now       |\n`;
+            out += `| ${w.email.slice(0, 33).padEnd(33)} | ${(w.status || 'pending').padEnd(9)} | ${String(w.attempt_count).padEnd(8)} | [Approve] [Reject] [Archive] |\n`;
           });
         }
         out += '+-----------------------------------------------------------------------------------------+\n';
@@ -797,6 +848,26 @@
           selector: '#btn-waitlist-refresh',
           disabled: false
         });
+        currentWaitlist.forEach(entry => {
+          items.push({
+            id: `btn-approve-${entry.id}`,
+            label: `Approve ${entry.email}`,
+            selector: `#btn-approve-${entry.id}`,
+            disabled: entry.status === 'approved'
+          });
+          items.push({
+            id: `btn-reject-${entry.id}`,
+            label: `Reject ${entry.email}`,
+            selector: `#btn-reject-${entry.id}`,
+            disabled: entry.status === 'rejected'
+          });
+          items.push({
+            id: `btn-archive-${entry.id}`,
+            label: `Archive ${entry.email}`,
+            selector: `#btn-archive-${entry.id}`,
+            disabled: entry.status === 'archived'
+          });
+        });
       } else {
         currentConversations.forEach(c => {
           items.push({
@@ -852,6 +923,10 @@
         await performLogin('connectwithsanthoshmk@gmail.com', '[REDACTED]');
       }
       return await sendMessage(text);
+    },
+
+    updateWaitlistStatus: async (id, status) => {
+      return await updateWaitlistStatus(id, status);
     }
   };
 

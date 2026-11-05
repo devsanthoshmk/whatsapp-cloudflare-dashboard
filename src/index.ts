@@ -11,6 +11,8 @@ import {
   handleGetConversations,
   handleGetMessages,
   handleSendMessage,
+  handleBatchSend,
+  handleForwardMessage,
   handleDirectUpload,
   handleGetMedia,
   handleGetStats
@@ -66,6 +68,8 @@ app.post('/api/waitlist/:id/status', handleUpdateWaitlistStatus);
 app.get('/api/conversations', handleGetConversations);
 app.get('/api/messages/:wa_id', handleGetMessages);
 app.post('/api/send', handleSendMessage);
+app.post('/api/send-batch', handleBatchSend);
+app.post('/api/messages/forward', handleForwardMessage);
 app.post('/api/upload', handleDirectUpload);
 app.get('/api/media/:key{.+$}', handleGetMedia);
 app.get('/api/stats', handleGetStats);

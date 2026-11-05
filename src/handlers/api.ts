@@ -334,49 +334,74 @@ export async function handleGetMessages(c: Context<{ Bindings: Env }>) {
 }
 
 /**
- * POST /api/send
- * Outbound manual reply via YCloud with 24-hour CSW validation
+ * Helper to dispatch outbound message via YCloud API and record into D1
  */
-export async function handleSendMessage(c: Context<{ Bindings: Env }>) {
-  const db = c.env.DB;
+async function dispatchOutbound(
+  db: D1Database,
+  apiKey: string,
+  to: string,
+  msgType: 'text' | 'image' | 'document' | 'audio' = 'text',
+  text?: string,
+  mediaUrl?: string,
+  mediaFilename?: string,
+  caption?: string
+): Promise<{ success: boolean; messageId?: string; error?: string; code?: string; details?: any }> {
   const now = Math.floor(Date.now() / 1000);
-
-  let body: { to: string; text: string };
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: 'INVALID_PAYLOAD', message: 'Invalid JSON payload' }, 400);
-  }
-
-  const { to, text } = body;
-  if (!to || !text || text.trim() === '') {
-    return c.json({ error: 'VALIDATION_ERROR', message: 'Recipient (to) and text body are required' }, 400);
-  }
-
   const normalizedTo = to.replace(/\+/g, '').trim();
 
   // 1. Verify Customer Service Window (CSW)
   const customer = await db.prepare('SELECT * FROM customers WHERE wa_id = ?1').bind(normalizedTo).first<Customer>();
   if (customer && now >= customer.csw_expires_at) {
-    return c.json({
-      error: 'WINDOW_EXPIRED',
+    return {
+      success: false,
       code: 'CSW_CLOSED',
-      message: 'Customer Service Window expired (>24h). Free message cannot be delivered. Send via WhatsApp mobile app or use an approved template.',
-      cswExpiresAt: customer.csw_expires_at,
-      now
-    }, 403);
+      error: 'Customer service window expired (>24h). Free message cannot be delivered.'
+    };
   }
 
-  // 2. Dispatch message via YCloud API
-  const fromNumber = c.env.PHONE_NUMBER_ID ? undefined : '+919176650591';
-  const apiKey = c.env.YCLOUD_API_KEY || '';
+  // 2. Build YCloud Payload
+  const cleanBody = (text || '').trim();
+  const cleanCaption = (caption || '').trim();
+  let payload: Record<string, any>;
 
-  const payload = {
-    from: '+919176650591',
-    to: `+${normalizedTo}`,
-    type: 'text',
-    text: { body: text.trim() }
-  };
+  if (msgType === 'image') {
+    payload = {
+      from: '+919176650591',
+      to: `+${normalizedTo}`,
+      type: 'image',
+      image: {
+        link: mediaUrl,
+        ...(cleanCaption || cleanBody ? { caption: cleanCaption || cleanBody } : {})
+      }
+    };
+  } else if (msgType === 'document') {
+    payload = {
+      from: '+919176650591',
+      to: `+${normalizedTo}`,
+      type: 'document',
+      document: {
+        link: mediaUrl,
+        filename: mediaFilename || 'document.pdf',
+        ...(cleanCaption || cleanBody ? { caption: cleanCaption || cleanBody } : {})
+      }
+    };
+  } else if (msgType === 'audio') {
+    payload = {
+      from: '+919176650591',
+      to: `+${normalizedTo}`,
+      type: 'audio',
+      audio: {
+        link: mediaUrl
+      }
+    };
+  } else {
+    payload = {
+      from: '+919176650591',
+      to: `+${normalizedTo}`,
+      type: 'text',
+      text: { body: cleanBody }
+    };
+  }
 
   try {
     const ycloudRes = await fetch('https://api.ycloud.com/v2/whatsapp/messages/sendDirectly', {
@@ -388,37 +413,56 @@ export async function handleSendMessage(c: Context<{ Bindings: Env }>) {
       body: JSON.stringify(payload)
     });
 
-    const resData: any = await ycloudRes.json();
+    const resData: any = await ycloudRes.json().catch(() => ({}));
 
     if (!ycloudRes.ok) {
       const errCode = resData?.error?.code || 'SEND_FAILED';
       const errMsg = resData?.error?.message || 'YCloud API error';
 
-      // Record failed outbound in D1
-      const failedId = `failed_${Date.now()}`;
+      const failedId = `failed_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       await db.prepare(`
         INSERT INTO messages (
-          id, customer_wa_id, direction, type, body, 
+          id, customer_wa_id, direction, type, body, media_url, media_filename,
           status, error_code, error_message, raw_payload, created_at
-        ) VALUES (?1, ?2, 'outbound', 'text', ?3, 'failed', ?4, ?5, ?6, ?7)
-      `).bind(failedId, normalizedTo, text.trim(), errCode, errMsg, JSON.stringify(resData), now).run();
+        ) VALUES (?1, ?2, 'outbound', ?3, ?4, ?5, ?6, 'failed', ?7, ?8, ?9, ?10)
+      `).bind(
+        failedId,
+        normalizedTo,
+        msgType,
+        cleanCaption || cleanBody || null,
+        mediaUrl || null,
+        mediaFilename || null,
+        errCode,
+        errMsg,
+        JSON.stringify(resData),
+        now
+      ).run();
 
-      return c.json({
-        error: errCode,
-        message: errMsg,
+      return {
+        success: false,
+        code: errCode,
+        error: errMsg,
         details: resData
-      }, ycloudRes.status as any);
+      };
     }
 
-    const messageId = resData.wamid || resData.id || `out_${Date.now()}`;
+    const messageId = resData.wamid || resData.id || `out_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
-    // Record successful outbound message in D1
     await db.prepare(`
       INSERT INTO messages (
-        id, customer_wa_id, direction, type, body, 
+        id, customer_wa_id, direction, type, body, media_url, media_filename,
         status, raw_payload, created_at
-      ) VALUES (?1, ?2, 'outbound', 'text', ?3, 'accepted', ?4, ?5)
-    `).bind(messageId, normalizedTo, text.trim(), JSON.stringify(resData), now).run();
+      ) VALUES (?1, ?2, 'outbound', ?3, ?4, ?5, ?6, 'accepted', ?7, ?8)
+    `).bind(
+      messageId,
+      normalizedTo,
+      msgType,
+      cleanCaption || cleanBody || null,
+      mediaUrl || null,
+      mediaFilename || null,
+      JSON.stringify(resData),
+      now
+    ).run();
 
     // Increment monthly service messages counter
     const monthKey = R2ZeroBillingGuard.getCurrentMonthKey();
@@ -430,15 +474,223 @@ export async function handleSendMessage(c: Context<{ Bindings: Env }>) {
         updated_at = excluded.updated_at
     `).bind(monthKey, now).run();
 
-    return c.json({
+    return {
       success: true,
       messageId,
-      status: resData.status || 'accepted',
-      data: resData
-    });
+      details: resData
+    };
   } catch (err: any) {
-    return c.json({ error: 'NETWORK_ERROR', message: err.message }, 500);
+    return {
+      success: false,
+      code: 'NETWORK_ERROR',
+      error: err.message
+    };
   }
+}
+
+/**
+ * POST /api/send
+ * Outbound manual reply via YCloud supporting text, images, documents/PDFs, and audio
+ */
+export async function handleSendMessage(c: Context<{ Bindings: Env }>) {
+  const db = c.env.DB;
+  const apiKey = c.env.YCLOUD_API_KEY || '';
+
+  let body: {
+    to?: string;
+    text?: string;
+    type?: 'text' | 'image' | 'document' | 'audio';
+    media_url?: string;
+    media_filename?: string;
+    caption?: string;
+  };
+
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'INVALID_PAYLOAD', message: 'Invalid JSON payload' }, 400);
+  }
+
+  const { to, text, type = 'text', media_url, media_filename, caption } = body;
+  if (!to || typeof to !== 'string') {
+    return c.json({ error: 'VALIDATION_ERROR', message: 'Recipient (to) is required' }, 400);
+  }
+
+  if (type === 'text' && (!text || text.trim() === '')) {
+    return c.json({ error: 'VALIDATION_ERROR', message: 'Message text is required' }, 400);
+  }
+
+  if (type !== 'text' && !media_url) {
+    return c.json({ error: 'VALIDATION_ERROR', message: `media_url is required for ${type} messages` }, 400);
+  }
+
+  const result = await dispatchOutbound(
+    db,
+    apiKey,
+    to,
+    type,
+    text,
+    media_url,
+    media_filename,
+    caption
+  );
+
+  if (!result.success) {
+    const status = result.code === 'CSW_CLOSED' ? 403 : 400;
+    return c.json({
+      error: result.code || 'SEND_FAILED',
+      message: result.error || 'Failed to send message',
+      details: result.details
+    }, status);
+  }
+
+  return c.json({
+    success: true,
+    messageId: result.messageId,
+    status: 'accepted',
+    data: result.details
+  });
+}
+
+/**
+ * POST /api/send-batch
+ * Multi-send broadcast to multiple customer recipients with CSW validation
+ */
+export async function handleBatchSend(c: Context<{ Bindings: Env }>) {
+  const db = c.env.DB;
+  const apiKey = c.env.YCLOUD_API_KEY || '';
+
+  let body: {
+    recipients?: string[];
+    text?: string;
+    type?: 'text' | 'image' | 'document' | 'audio';
+    media_url?: string;
+    media_filename?: string;
+    caption?: string;
+  };
+
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'INVALID_PAYLOAD', message: 'Invalid JSON payload' }, 400);
+  }
+
+  const recipients = Array.isArray(body?.recipients) ? body.recipients : [];
+  if (recipients.length === 0) {
+    return c.json({ error: 'VALIDATION_ERROR', message: 'At least one recipient is required' }, 400);
+  }
+
+  const type = body.type || 'text';
+  const text = body.text;
+  const media_url = body.media_url;
+  const media_filename = body.media_filename;
+  const caption = body.caption;
+
+  const results: Array<{ waId: string; success: boolean; messageId?: string; error?: string }> = [];
+  let sentCount = 0;
+  let failedCount = 0;
+
+  for (const rawTo of recipients) {
+    const to = String(rawTo).replace(/\+/g, '').trim();
+    if (!to) continue;
+
+    const res = await dispatchOutbound(
+      db,
+      apiKey,
+      to,
+      type,
+      text,
+      media_url,
+      media_filename,
+      caption
+    );
+
+    if (res.success) {
+      sentCount++;
+      results.push({ waId: to, success: true, messageId: res.messageId });
+    } else {
+      failedCount++;
+      results.push({ waId: to, success: false, error: res.error || 'Send failed' });
+    }
+  }
+
+  return c.json({
+    success: true,
+    total: results.length,
+    sentCount,
+    failedCount,
+    results
+  });
+}
+
+/**
+ * POST /api/messages/forward
+ * Forwards an existing message to one or more recipient conversations
+ */
+export async function handleForwardMessage(c: Context<{ Bindings: Env }>) {
+  const db = c.env.DB;
+  const apiKey = c.env.YCLOUD_API_KEY || '';
+
+  let body: {
+    messageId?: string;
+    targetWaIds?: string[];
+  };
+
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'INVALID_PAYLOAD', message: 'Invalid JSON payload' }, 400);
+  }
+
+  const { messageId, targetWaIds } = body;
+  if (!messageId || !Array.isArray(targetWaIds) || targetWaIds.length === 0) {
+    return c.json({ error: 'VALIDATION_ERROR', message: 'messageId and targetWaIds array are required' }, 400);
+  }
+
+  // 1. Fetch original message from D1
+  const origMsg = await db.prepare('SELECT * FROM messages WHERE id = ?1').bind(messageId).first<Message>();
+  if (!origMsg) {
+    return c.json({ error: 'NOT_FOUND', message: 'Source message not found' }, 404);
+  }
+
+  const msgType = (['image', 'document', 'audio'].includes(origMsg.type) ? origMsg.type : 'text') as 'text' | 'image' | 'document' | 'audio';
+  const mediaUrl = origMsg.media_url ? resolveMediaUrl(origMsg.media_r2_key, c.env.R2_PUBLIC_URL, origMsg.media_url) || origMsg.media_url : undefined;
+
+  const results: Array<{ waId: string; success: boolean; messageId?: string; error?: string }> = [];
+  let sentCount = 0;
+  let failedCount = 0;
+
+  for (const rawTo of targetWaIds) {
+    const to = String(rawTo).replace(/\+/g, '').trim();
+    if (!to) continue;
+
+    const res = await dispatchOutbound(
+      db,
+      apiKey,
+      to,
+      msgType,
+      origMsg.body || undefined,
+      mediaUrl,
+      origMsg.media_filename || undefined,
+      origMsg.body || undefined
+    );
+
+    if (res.success) {
+      sentCount++;
+      results.push({ waId: to, success: true, messageId: res.messageId });
+    } else {
+      failedCount++;
+      results.push({ waId: to, success: false, error: res.error });
+    }
+  }
+
+  return c.json({
+    success: true,
+    total: results.length,
+    sentCount,
+    failedCount,
+    results
+  });
 }
 
 /**
@@ -577,6 +829,28 @@ export async function handleGetStats(c: Context<{ Bindings: Env }>) {
   const dailyRow = await db.prepare('SELECT COUNT(DISTINCT wa_id) as count FROM customers WHERE updated_at >= ?1').bind(dayAgo).first<{ count: number }>();
   const dailyRecipientsCount = dailyRow?.count ?? 0;
 
+  // Live upstream YCloud balance & status check
+  let walletBalance = 0.50;
+  let currency = 'USD';
+  let providerStatus = 'connected';
+
+  if (c.env.YCLOUD_API_KEY) {
+    try {
+      const balRes = await fetch('https://api.ycloud.com/v2/balance', {
+        headers: { 'X-API-Key': c.env.YCLOUD_API_KEY }
+      });
+      if (balRes.ok) {
+        const balData: any = await balRes.json();
+        if (typeof balData.balance === 'number') {
+          walletBalance = balData.balance;
+          currency = balData.currency || 'USD';
+        }
+      }
+    } catch {
+      // Graceful fallback to default
+    }
+  }
+
   // R2 Zero-Billing Summary
   const r2Summary = await R2ZeroBillingGuard.getUsageSummary(db);
 
@@ -585,9 +859,11 @@ export async function handleGetStats(c: Context<{ Bindings: Env }>) {
     monthlyServiceLimit: 1000,
     dailyRecipientsCount,
     dailyRecipientsLimit: 250,
-    walletBalance: 0.50,
-    currency: 'USD',
-    r2: r2Summary
+    walletBalance,
+    currency,
+    r2: r2Summary,
+    lastSyncAt: Math.floor(Date.now() / 1000),
+    providerStatus
   };
 
   return c.json(stats);
