@@ -26,7 +26,11 @@ export function resolveMediaUrl(
  * POST /api/auth/login
  * Validates email and password:
  * - Admin email: validates against ADMIN_PASSWORD, sets session token cookie, returns user
- * - Non-admin email: upserts entry into waitlist table and returns 403 Forbidden
+ * - Non-admin email:
+ *   - Approved: validates password against ADMIN_PASSWORD, creates member session token & cookie
+ *   - Rejected: increments attempt_count, updates last_attempt_at, returns 403 REJECTED
+ *   - Archived: increments attempt_count, updates last_attempt_at, returns 403 ARCHIVED
+ *   - Pending or not found: upserts waitlist entry, returns 403 WAITLISTED
  */
 export async function handleAuthLogin(c: Context<{ Bindings: Env }>) {
   let body: { email?: string; password?: string } = {};
@@ -63,7 +67,62 @@ export async function handleAuthLogin(c: Context<{ Bindings: Env }>) {
     });
   }
 
-  // Non-admin email: upsert into waitlist table in D1
+  // Non-admin email: query waitlist for this email
+  const entry = await c.env.DB.prepare(`
+    SELECT * FROM waitlist WHERE email = ?1
+  `).bind(normalizedEmail).first<WaitlistEntry>();
+
+  const entryStatus = entry?.status?.toLowerCase().trim();
+
+  if (entry && entryStatus === 'approved') {
+    if (!body.password || body.password !== adminPassword) {
+      return c.json({ error: 'INVALID_CREDENTIALS', message: 'Incorrect password' }, 401);
+    }
+
+    const secret = c.env.AUTH_SECRET || '[REDACTED]';
+    const token = await AuthService.createSessionToken({ email: normalizedEmail, role: 'member' }, secret);
+
+    c.header('Set-Cookie', `session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`);
+    return c.json({
+      success: true,
+      user: {
+        email: normalizedEmail,
+        role: 'member'
+      }
+    });
+  }
+
+  if (entry && entryStatus === 'rejected') {
+    const now = Math.floor(Date.now() / 1000);
+    await c.env.DB.prepare(`
+      UPDATE waitlist
+      SET attempt_count = attempt_count + 1,
+          last_attempt_at = ?1
+      WHERE id = ?2
+    `).bind(now, entry.id).run();
+
+    return c.json({
+      error: 'REJECTED',
+      message: 'Your access request has been declined.'
+    }, 403);
+  }
+
+  if (entry && entryStatus === 'archived') {
+    const now = Math.floor(Date.now() / 1000);
+    await c.env.DB.prepare(`
+      UPDATE waitlist
+      SET attempt_count = attempt_count + 1,
+          last_attempt_at = ?1
+      WHERE id = ?2
+    `).bind(now, entry.id).run();
+
+    return c.json({
+      error: 'ARCHIVED',
+      message: 'Your access request is archived. Contact admin for reactivation.'
+    }, 403);
+  }
+
+  // If entry does not exist or entry.status === 'pending'
   const id = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
 
@@ -133,6 +192,48 @@ export async function handleGetWaitlist(c: Context<{ Bindings: Env }>) {
   `).all<WaitlistEntry>();
 
   return c.json({ waitlist: results || [] });
+}
+
+const ALLOWED_WAITLIST_STATUSES = ['approved', 'rejected', 'archived', 'pending'] as const;
+export type WaitlistStatus = (typeof ALLOWED_WAITLIST_STATUSES)[number];
+
+/**
+ * PATCH /api/waitlist/:id
+ * POST /api/waitlist/:id/status
+ * Updates the status of a waitlist entry (approved, rejected, archived, pending)
+ */
+export async function handleUpdateWaitlistStatus(c: Context<{ Bindings: Env }>) {
+  const id = c.req.param('id');
+  if (!id) {
+    return c.json({ error: 'VALIDATION_ERROR', message: 'Waitlist ID is required' }, 400);
+  }
+
+  let body: { status?: unknown } = {};
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'INVALID_PAYLOAD', message: 'Invalid JSON payload' }, 400);
+  }
+
+  const rawStatus = typeof body?.status === 'string' ? body.status.trim().toLowerCase() : '';
+  if (!rawStatus || !ALLOWED_WAITLIST_STATUSES.includes(rawStatus as WaitlistStatus)) {
+    return c.json({
+      error: 'VALIDATION_ERROR',
+      message: 'Invalid status. Allowed values: approved, rejected, archived, pending'
+    }, 400);
+  }
+
+  const status = rawStatus as WaitlistStatus;
+  const result = await c.env.DB.prepare(`
+    UPDATE waitlist SET status = ?1 WHERE id = ?2
+  `).bind(status, id).run();
+
+  const changes = result.meta?.changes ?? (result as any).changes ?? 0;
+  if (changes === 0) {
+    return c.json({ error: 'NOT_FOUND', message: 'Waitlist entry not found' }, 404);
+  }
+
+  return c.json({ success: true, id, status });
 }
 
 /**

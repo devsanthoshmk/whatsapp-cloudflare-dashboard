@@ -334,13 +334,31 @@
       const cswClass = c.csw.isActive ? 'csw-active' : 'csw-closed';
       const lastMsgText = c.lastMessage?.body || `[${c.lastMessage?.type || 'Message'}]`;
 
+      const displayName = c.name || c.phoneNumber || 'User';
+      let initials = 'WA';
+      if (c.name) {
+        const words = c.name.trim().split(/\s+/).filter(Boolean);
+        if (words.length >= 2) {
+          initials = (words[0][0] + words[1][0]).toUpperCase();
+        } else if (words.length === 1 && words[0].length >= 2) {
+          initials = words[0].slice(0, 2).toUpperCase();
+        } else if (words.length === 1) {
+          initials = words[0].slice(0, 1).toUpperCase();
+        }
+      }
+
       item.innerHTML = `
-        <div class="conv-header">
-          <span class="conv-name">${escapeHtml(c.name || c.phoneNumber)}</span>
-          <span class="conv-cust-id">${escapeHtml(c.id)}</span>
+        <div class="conv-avatar">${escapeHtml(initials)}</div>
+        <div class="conv-content">
+          <div class="conv-header">
+            <span class="conv-name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
+            <span class="conv-cust-id">${escapeHtml(c.id)}</span>
+          </div>
+          <div class="conv-snippet">${escapeHtml(lastMsgText)}</div>
+          <div class="conv-footer">
+            <span class="conv-csw ${cswClass}">${escapeHtml(c.csw.label)}</span>
+          </div>
         </div>
-        <div class="conv-snippet">${escapeHtml(lastMsgText)}</div>
-        <span class="conv-csw ${cswClass}">${escapeHtml(c.csw.label)}</span>
       `;
 
       item.addEventListener('click', () => selectCustomer(c.waId));
@@ -354,6 +372,22 @@
     if (!activeCustomer) return false;
 
     renderConversations();
+
+    const headerAvatarEl = document.getElementById('chat-header-avatar');
+    if (headerAvatarEl) {
+      let initials = 'WA';
+      if (activeCustomer.name) {
+        const words = activeCustomer.name.trim().split(/\s+/).filter(Boolean);
+        if (words.length >= 2) {
+          initials = (words[0][0] + words[1][0]).toUpperCase();
+        } else if (words.length === 1 && words[0].length >= 2) {
+          initials = words[0].slice(0, 2).toUpperCase();
+        } else if (words.length === 1) {
+          initials = words[0].slice(0, 1).toUpperCase();
+        }
+      }
+      headerAvatarEl.textContent = initials;
+    }
 
     // Update Chat Header
     chatEmptyEl.style.display = 'none';
@@ -804,6 +838,20 @@
       });
 
       return items;
+    },
+
+    selectCustomer: async (waId) => {
+      if (!isAuthenticated) {
+        await performLogin('connectwithsanthoshmk@gmail.com', '[REDACTED]');
+      }
+      return await selectCustomer(waId);
+    },
+
+    sendMessage: async (text) => {
+      if (!isAuthenticated) {
+        await performLogin('connectwithsanthoshmk@gmail.com', '[REDACTED]');
+      }
+      return await sendMessage(text);
     }
   };
 

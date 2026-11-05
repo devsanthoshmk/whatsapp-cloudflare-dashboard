@@ -7,6 +7,7 @@ import {
   handleAuthLogout,
   handleAuthCheck,
   handleGetWaitlist,
+  handleUpdateWaitlistStatus,
   handleGetConversations,
   handleGetMessages,
   handleSendMessage,
@@ -60,6 +61,8 @@ app.get('/api/auth/check', handleAuthCheck);
 
 // API routes
 app.get('/api/waitlist', handleGetWaitlist);
+app.patch('/api/waitlist/:id', handleUpdateWaitlistStatus);
+app.post('/api/waitlist/:id/status', handleUpdateWaitlistStatus);
 app.get('/api/conversations', handleGetConversations);
 app.get('/api/messages/:wa_id', handleGetMessages);
 app.post('/api/send', handleSendMessage);
