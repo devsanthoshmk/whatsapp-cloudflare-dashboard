@@ -6,6 +6,8 @@ export interface Env {
   PHONE_NUMBER_ID?: string;
   WABA_ID?: string;
   AUTH_PASSWORD?: string;
+  ADMIN_EMAIL?: string;
+  ADMIN_PASSWORD?: string;
   AUTH_SECRET?: string;
   R2_PUBLIC_URL?: string;
   ASSETS?: Fetcher;
@@ -65,3 +67,13 @@ export interface UsageStats {
   currency: string;
   r2: R2StatsSummary;
 }
+
+export interface WaitlistEntry {
+  id: string;
+  email: string;
+  status: string;
+  attempt_count: number;
+  last_attempt_at: number;
+  created_at: number;
+}
+

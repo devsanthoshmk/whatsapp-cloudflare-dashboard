@@ -4,6 +4,8 @@
  */
 
 export interface SessionData {
+  email: string;
+  role: string;
   exp: number; // Expiration timestamp in seconds
   iat: number; // Issued at timestamp in seconds
 }
@@ -15,16 +17,19 @@ export class AuthService {
    * Generates a signed session token: base64url(payload).hexSignature
    */
   public static async createSessionToken(
+    payload: { email: string; role: string },
     secret: string,
     expSeconds: number = this.DEFAULT_EXP_SECONDS
   ): Promise<string> {
     const now = Math.floor(Date.now() / 1000);
-    const payload: SessionData = {
+    const sessionPayload: SessionData = {
+      email: payload.email,
+      role: payload.role,
       iat: now,
       exp: now + expSeconds
     };
 
-    const payloadStr = JSON.stringify(payload);
+    const payloadStr = JSON.stringify(sessionPayload);
     const encoder = new TextEncoder();
 
     const key = await crypto.subtle.importKey(
@@ -46,6 +51,40 @@ export class AuthService {
       .replace(/=+$/, '');
 
     return `${b64Payload}.${sigHex}`;
+  }
+
+  /**
+   * Decodes session token payload and returns { email, role, exp, iat }
+   */
+  public static extractSessionData(token: string): SessionData | null {
+    try {
+      const [b64Payload] = token.split('.');
+      if (!b64Payload) {
+        return null;
+      }
+
+      // Restore base64 padding
+      let base64 = b64Payload.replace(/-/g, '+').replace(/_/g, '/');
+      while (base64.length % 4) {
+        base64 += '=';
+      }
+
+      const payloadStr = atob(base64);
+      const data = JSON.parse(payloadStr);
+
+      if (!data || typeof data !== 'object') {
+        return null;
+      }
+
+      const { email, role, exp, iat } = data;
+      if (typeof email !== 'string' || typeof role !== 'string' || typeof exp !== 'number' || typeof iat !== 'number') {
+        return null;
+      }
+
+      return { email, role, exp, iat };
+    } catch {
+      return null;
+    }
   }
 
   /**

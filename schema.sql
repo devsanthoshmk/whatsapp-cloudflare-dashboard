@@ -55,3 +55,15 @@ CREATE TABLE IF NOT EXISTS r2_usage (
 CREATE INDEX IF NOT EXISTS idx_messages_customer ON messages(customer_wa_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_customers_csw ON customers(csw_expires_at);
 CREATE INDEX IF NOT EXISTS idx_messages_r2_active ON messages(created_at, media_r2_key, status) WHERE media_r2_key IS NOT NULL;
+
+-- Waitlist table for unapproved sign-in attempts
+CREATE TABLE IF NOT EXISTS waitlist (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  status TEXT DEFAULT 'pending',
+  attempt_count INTEGER DEFAULT 1,
+  last_attempt_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_waitlist_created ON waitlist(created_at DESC);
+

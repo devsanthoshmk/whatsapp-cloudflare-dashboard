@@ -1,6 +1,139 @@
 import type { Context } from 'hono';
-import type { Env, Customer, Message, UsageStats } from '../types';
+import type { Env, Customer, Message, UsageStats, WaitlistEntry } from '../types';
 import { R2ZeroBillingGuard } from '../services/r2-guard';
+import { AuthService } from '../services/auth';
+
+/**
+ * Resolves media URL directly to R2 public URL if configured (bypassing Worker invocations
+ * and R2 Class B charges), falling back to internal /api/media/:key endpoint.
+ */
+export function resolveMediaUrl(
+  mediaR2Key: string | null | undefined,
+  r2PublicUrl?: string,
+  existingMediaUrl?: string | null
+): string | null {
+  if (!mediaR2Key) {
+    return existingMediaUrl || null;
+  }
+  if (r2PublicUrl) {
+    const base = r2PublicUrl.replace(/\/+$/, '');
+    return `${base}/${encodeURIComponent(mediaR2Key)}`;
+  }
+  return `/api/media/${encodeURIComponent(mediaR2Key)}`;
+}
+
+/**
+ * POST /api/auth/login
+ * Validates email and password:
+ * - Admin email: validates against ADMIN_PASSWORD, sets session token cookie, returns user
+ * - Non-admin email: upserts entry into waitlist table and returns 403 Forbidden
+ */
+export async function handleAuthLogin(c: Context<{ Bindings: Env }>) {
+  let body: { email?: string; password?: string } = {};
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'INVALID_PAYLOAD', message: 'Invalid JSON payload' }, 400);
+  }
+
+  const rawEmail = body.email || '';
+  const normalizedEmail = rawEmail.trim().toLowerCase();
+  const adminEmail = (c.env.ADMIN_EMAIL || 'connectwithsanthoshmk@gmail.com').trim().toLowerCase();
+  const adminPassword = c.env.ADMIN_PASSWORD || '[REDACTED]';
+
+  if (!normalizedEmail) {
+    return c.json({ error: 'VALIDATION_ERROR', message: 'Email is required' }, 400);
+  }
+
+  if (normalizedEmail === adminEmail) {
+    if (!body.password || body.password !== adminPassword) {
+      return c.json({ error: 'INVALID_CREDENTIALS', message: 'Incorrect password' }, 401);
+    }
+
+    const secret = c.env.AUTH_SECRET || '[REDACTED]';
+    const token = await AuthService.createSessionToken({ email: normalizedEmail, role: 'admin' }, secret);
+
+    c.header('Set-Cookie', `session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`);
+    return c.json({
+      success: true,
+      user: {
+        email: normalizedEmail,
+        role: 'admin'
+      }
+    });
+  }
+
+  // Non-admin email: upsert into waitlist table in D1
+  const id = crypto.randomUUID();
+  const now = Math.floor(Date.now() / 1000);
+
+  await c.env.DB.prepare(`
+    INSERT INTO waitlist (id, email, status, attempt_count, last_attempt_at, created_at)
+    VALUES (?1, ?2, 'pending', 1, ?3, ?3)
+    ON CONFLICT(email) DO UPDATE SET
+      attempt_count = waitlist.attempt_count + 1,
+      last_attempt_at = excluded.last_attempt_at
+  `).bind(id, normalizedEmail, now).run();
+
+  return c.json({
+    error: 'WAITLISTED',
+    message: 'This account is waitlisted. An administrator will review your access request.'
+  }, 403);
+}
+
+/**
+ * POST /api/auth/logout
+ * Clears session cookie and returns { success: true }.
+ */
+export async function handleAuthLogout(c: Context<{ Bindings: Env }>) {
+  c.header('Set-Cookie', 'session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0');
+  return c.json({ success: true });
+}
+
+/**
+ * GET /api/auth/check
+ * Extracts session cookie, verifies token, and returns { authenticated: boolean, user?: { email: string, role: string } }.
+ */
+export async function handleAuthCheck(c: Context<{ Bindings: Env }>) {
+  const cookieHeader = c.req.header('Cookie') || c.req.header('cookie');
+  const token = AuthService.extractSessionCookie(cookieHeader);
+
+  if (!token) {
+    return c.json({ authenticated: false });
+  }
+
+  const secret = c.env.AUTH_SECRET || '[REDACTED]';
+  const authenticated = await AuthService.verifySessionToken(token, secret);
+  if (!authenticated) {
+    return c.json({ authenticated: false });
+  }
+
+  const session = AuthService.extractSessionData(token);
+  if (!session) {
+    return c.json({ authenticated: false });
+  }
+
+  return c.json({
+    authenticated: true,
+    user: {
+      email: session.email,
+      role: session.role
+    }
+  });
+}
+
+/**
+ * GET /api/waitlist
+ * Queries all waitlist records ordered by last_attempt_at DESC
+ */
+export async function handleGetWaitlist(c: Context<{ Bindings: Env }>) {
+  const db = c.env.DB;
+  const { results } = await db.prepare(`
+    SELECT * FROM waitlist ORDER BY last_attempt_at DESC
+  `).all<WaitlistEntry>();
+
+  return c.json({ waitlist: results || [] });
+}
 
 /**
  * GET /api/conversations
@@ -17,7 +150,9 @@ export async function handleGetConversations(c: Context<{ Bindings: Env }>) {
       m.type AS last_message_type,
       m.direction AS last_message_direction,
       m.status AS last_message_status,
-      m.created_at AS last_message_time
+      m.created_at AS last_message_time,
+      m.media_r2_key AS last_message_media_r2_key,
+      m.media_url AS last_message_media_url
     FROM customers c
     LEFT JOIN (
       SELECT m1.*
@@ -39,6 +174,11 @@ export async function handleGetConversations(c: Context<{ Bindings: Env }>) {
     const remainingSeconds = Math.max(0, row.csw_expires_at - now);
     const remainingMinutes = Math.floor(remainingSeconds / 60);
     const remainingHours = Number((remainingSeconds / 3600).toFixed(1));
+    const lastMessageMediaUrl = resolveMediaUrl(
+      row.last_message_media_r2_key,
+      c.env.R2_PUBLIC_URL,
+      row.last_message_media_url
+    );
 
     return {
       id: row.id,
@@ -58,7 +198,9 @@ export async function handleGetConversations(c: Context<{ Bindings: Env }>) {
         type: row.last_message_type,
         direction: row.last_message_direction,
         status: row.last_message_status,
-        timestamp: row.last_message_time || row.updated_at
+        timestamp: row.last_message_time || row.updated_at,
+        media_r2_key: row.last_message_media_r2_key || null,
+        media_url: lastMessageMediaUrl
       },
       totalMessages: row.total_messages_count
     };
@@ -80,9 +222,14 @@ export async function handleGetMessages(c: Context<{ Bindings: Env }>) {
     WHERE customer_wa_id = ?1
     ORDER BY created_at ASC
     LIMIT 100
-  `).bind(waId).all();
+  `).bind(waId).all<Message>();
 
-  return c.json({ messages: results || [] });
+  const messages = (results || []).map((msg) => ({
+    ...msg,
+    media_url: resolveMediaUrl(msg.media_r2_key, c.env.R2_PUBLIC_URL, msg.media_url)
+  }));
+
+  return c.json({ messages });
 }
 
 /**
@@ -240,7 +387,7 @@ export async function handleDirectUpload(c: Context<{ Bindings: Env }>) {
   return c.json({
     success: true,
     key,
-    url: `/api/media/${encodeURIComponent(key)}`,
+    url: resolveMediaUrl(key, c.env.R2_PUBLIC_URL),
     size: incomingBytes,
     contentType
   }, 201);

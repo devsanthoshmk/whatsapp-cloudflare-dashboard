@@ -823,6 +823,473 @@
       max-width: 340px;
       line-height: 1.5;
     }
+
+    /* Header Right Actions */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Subtle Logout Button */
+    .btn-auth-logout {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.45rem 0.85rem;
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 500;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      height: 34px;
+    }
+
+    .btn-auth-logout:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-hover);
+      color: #ffffff;
+    }
+
+    .btn-auth-logout svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+    }
+
+    /* Auth Modal & Obsidian/Emerald Overlay */
+    .auth-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(11, 12, 16, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1.5rem;
+      animation: authFadeIn 0.25s ease-out;
+    }
+
+    @keyframes authFadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .auth-card {
+      background: #14161d;
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 2.25rem 2rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.75), 0 0 35px -5px rgba(0, 168, 132, 0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+
+    .auth-logo-wrap {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #00a884 0%, #005c4b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px var(--wa-emerald-glow);
+      margin-bottom: 1.25rem;
+    }
+
+    .auth-logo-wrap svg {
+      width: 28px;
+      height: 28px;
+      fill: #ffffff;
+    }
+
+    .auth-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    .auth-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin-bottom: 1.5rem;
+    }
+
+    .auth-error {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      display: none;
+      text-align: left;
+    }
+
+    .auth-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .auth-input-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .auth-input-wrap input {
+      width: 100%;
+      background: #0b0c10;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      font-family: var(--font-sans);
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .auth-input-wrap input:focus {
+      border-color: var(--wa-emerald);
+      box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.2);
+    }
+
+    .auth-input-wrap input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .btn-auth-login {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #00a884 0%, #005c4b 100%);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.9rem;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: filter 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+      box-shadow: 0 3px 12px var(--wa-emerald-glow);
+    }
+
+    .btn-auth-login:hover:not(:disabled) {
+      filter: brightness(1.1);
+    }
+
+    .btn-auth-login:active:not(:disabled) {
+      transform: scale(0.99);
+    }
+
+    .btn-auth-login:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* View Switcher in Header */
+    .view-switcher {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: 9px;
+      padding: 3px;
+      margin-left: 0.5rem;
+    }
+
+    .view-nav-btn {
+      background: transparent;
+      border: none;
+      border-radius: 7px;
+      padding: 0.38rem 0.75rem;
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      font-weight: 500;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.15s ease;
+    }
+
+    .view-nav-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .view-nav-btn.active {
+      background: rgba(0, 168, 132, 0.18);
+      color: #2ee59d;
+      font-weight: 600;
+      border: 1px solid rgba(0, 168, 132, 0.3);
+    }
+
+    .badge-waitlist-pill {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      line-height: 1;
+    }
+
+    /* Waitlist Notice Card in Auth Modal (Amber/Gold) */
+    .auth-waitlist-notice {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      margin-bottom: 1rem;
+      border-radius: 10px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      display: none;
+      align-items: flex-start;
+      gap: 0.75rem;
+      text-align: left;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.08);
+    }
+
+    .auth-waitlist-icon {
+      color: #fbbf24;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .auth-waitlist-content {
+      flex: 1;
+    }
+
+    .auth-waitlist-title {
+      color: #fde68a;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+
+    .auth-waitlist-msg {
+      color: #fef3c7;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      opacity: 0.95;
+    }
+
+    /* Chat View Container */
+    .chat-view {
+      display: flex;
+      flex: 1;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    /* Waitlist View - Obsidian Styled Management Panel */
+    .waitlist-view {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      height: 100%;
+      width: 100%;
+      overflow-y: auto;
+      background: var(--bg-base);
+      padding: 1.75rem 2rem;
+    }
+
+    .waitlist-container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .waitlist-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .waitlist-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+
+    .waitlist-subtitle {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .waitlist-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .waitlist-search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .waitlist-search-wrapper .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      width: 14px;
+      height: 14px;
+      stroke: var(--text-muted);
+      stroke-width: 2;
+      pointer-events: none;
+    }
+
+    #input-waitlist-search {
+      background: #11131b;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.5rem 0.85rem 0.5rem 2.2rem;
+      color: var(--text-primary);
+      font-size: 0.84rem;
+      font-family: var(--font-sans);
+      width: 240px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #input-waitlist-search:focus {
+      border-color: var(--wa-emerald);
+      box-shadow: 0 0 0 2px rgba(0, 168, 132, 0.2);
+    }
+
+    #input-waitlist-search::placeholder {
+      color: var(--text-muted);
+    }
+
+    .btn-waitlist-refresh {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.5rem 0.85rem;
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      font-weight: 500;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      height: 34px;
+    }
+
+    .btn-waitlist-refresh:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      border-color: var(--border-hover);
+    }
+
+    .waitlist-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .waitlist-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .waitlist-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    .waitlist-table th {
+      background: #0d0f15;
+      padding: 0.75rem 1.25rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .waitlist-table td {
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+
+    .waitlist-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .waitlist-email {
+      font-weight: 500;
+      color: #ffffff;
+    }
+
+    .waitlist-attempts {
+      font-variant-numeric: tabular-nums;
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+    }
+
+    .waitlist-time {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .waitlist-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+      gap: 0.75rem;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
@@ -842,115 +1309,247 @@
         <span class="pulse-dot"></span>
         <span>Connected (+91 91766 50591)</span>
       </span>
+
+      <!-- View Switcher -->
+      <nav class="view-switcher" id="view-switcher">
+        <button id="btn-view-chat" class="view-nav-btn active" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span>Messages</span>
+        </button>
+        <button id="btn-view-waitlist" class="view-nav-btn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span>Waitlist</span>
+          <span id="badge-waitlist-count" class="badge-waitlist-pill">0</span>
+        </button>
+      </nav>
     </div>
 
-    <!-- Segmented Metrics Strip -->
-    <div class="metrics-group">
-      <div class="metric-card">
-        <span class="metric-label">Monthly free replies</span>
-        <span class="metric-val" id="val-monthly-csw">0 / 1000 Free</span>
-        <div class="progress-track">
-          <div class="progress-fill" id="bar-monthly-csw" style="width: 0%;"></div>
+    <!-- Segmented Metrics Strip & Actions -->
+    <div class="header-actions">
+      <div class="metrics-group" id="metrics-group">
+        <div class="metric-card">
+          <span class="metric-label">Monthly free replies</span>
+          <span class="metric-val" id="val-monthly-csw">0 / 1000 Free</span>
+          <div class="progress-track">
+            <div class="progress-fill" id="bar-monthly-csw" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div class="metric-divider"></div>
+
+        <div class="metric-card">
+          <span class="metric-label">Daily recipient tier</span>
+          <span class="metric-val" id="val-daily-tier">0 / 250</span>
+          <div class="progress-track">
+            <div class="progress-fill" id="bar-daily-tier" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div class="metric-divider"></div>
+
+        <div class="metric-card">
+          <span class="metric-label">Wallet balance</span>
+          <span class="metric-val" id="val-wallet">$0.50 USD</span>
+        </div>
+
+        <div class="metric-divider"></div>
+
+        <div class="metric-card">
+          <span class="metric-label">R2 storage guard</span>
+          <span class="metric-val" id="val-r2-storage">
+            <span id="text-r2-stat">0.00 MB / 9.00 GB</span>
+            <span class="badge badge-success" id="badge-r2-status">SAFE</span>
+          </span>
         </div>
       </div>
 
-      <div class="metric-divider"></div>
-
-      <div class="metric-card">
-        <span class="metric-label">Daily recipient tier</span>
-        <span class="metric-val" id="val-daily-tier">0 / 250</span>
-        <div class="progress-track">
-          <div class="progress-fill" id="bar-daily-tier" style="width: 0%;"></div>
-        </div>
-      </div>
-
-      <div class="metric-divider"></div>
-
-      <div class="metric-card">
-        <span class="metric-label">Wallet balance</span>
-        <span class="metric-val" id="val-wallet">$0.50 USD</span>
-      </div>
-
-      <div class="metric-divider"></div>
-
-      <div class="metric-card">
-        <span class="metric-label">R2 storage guard</span>
-        <span class="metric-val" id="val-r2-storage">
-          <span id="text-r2-stat">0.00 MB / 9.00 GB</span>
-          <span class="badge badge-success" id="badge-r2-status">SAFE</span>
-        </span>
-      </div>
+      <button id="btn-auth-logout" class="btn-auth-logout" title="Log out" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>Logout</span>
+      </button>
     </div>
   </header>
 
   <main>
-    <!-- Conversations Sidebar -->
-    <section class="sidebar">
-      <div class="search-box">
-        <div class="search-input-wrapper">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="16" y1="16" x2="21" y2="21" />
-          </svg>
-          <input type="text" id="input-search" placeholder="Search conversations...">
-        </div>
-      </div>
-      <div class="conversations-list" id="conv-list">
-        <!-- Injected via JavaScript -->
-      </div>
-    </section>
-
-    <!-- Active Chat Pane -->
-    <section class="chat-pane" id="chat-pane">
-      <div class="empty-state" id="chat-empty">
-        <div class="empty-icon-shield">
-          <svg viewBox="0 0 24 24">
-            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.17c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.4c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.01 4.54-3.69 8.25-8.22 8.25z"/>
-          </svg>
-        </div>
-        <div class="empty-title">WhatsApp Business Live Hub</div>
-        <div class="empty-desc">Select a client conversation from the sidebar to inspect incoming messages, monitor the 24-hour service window, and send replies.</div>
-      </div>
-
-      <div class="chat-header" id="chat-header" style="display: none;">
-        <div class="chat-header-user">
-          <div class="chat-header-avatar" id="chat-header-avatar">WA</div>
-          <div>
-            <div class="chat-user-title" id="chat-title-name">User Name</div>
-            <div class="chat-meta" id="chat-title-id">ID: cust_... | Phone: +...</div>
+    <!-- Chat View (Conversations & Active Pane) -->
+    <div id="chat-view" class="chat-view">
+      <!-- Conversations Sidebar -->
+      <section class="sidebar">
+        <div class="search-box">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="16" y1="16" x2="21" y2="21" />
+            </svg>
+            <input type="text" id="input-search" placeholder="Search conversations...">
           </div>
         </div>
-        <div>
-          <span class="conv-csw" id="chat-csw-pill">Free Reply: 23.5h left</span>
+        <div class="conversations-list" id="conv-list">
+          <!-- Injected via JavaScript -->
         </div>
-      </div>
+      </section>
 
-      <div class="messages-container" id="messages-container" style="display: none;">
-        <!-- Injected via JavaScript -->
-      </div>
-
-      <div class="composer" id="composer-pane" style="display: none;">
-        <div class="csw-warning-banner" id="banner-csw-closed">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-          <span>Notice: 24-hour customer service window expired. Free replies cannot be delivered. Send manually from the WhatsApp mobile app or use an approved template.</span>
-        </div>
-        <div class="composer-row">
-          <input type="text" id="input-msg" placeholder="Type a message...">
-          <button id="btn-send">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      <!-- Active Chat Pane -->
+      <section class="chat-pane" id="chat-pane">
+        <div class="empty-state" id="chat-empty">
+          <div class="empty-icon-shield">
+            <svg viewBox="0 0 24 24">
+              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.17c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.4c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.01 4.54-3.69 8.25-8.22 8.25z"/>
             </svg>
-            <span>Send</span>
-          </button>
+          </div>
+          <div class="empty-title">WhatsApp Business Live Hub</div>
+          <div class="empty-desc">Select a client conversation from the sidebar to inspect incoming messages, monitor the 24-hour service window, and send replies.</div>
+        </div>
+
+        <div class="chat-header" id="chat-header" style="display: none;">
+          <div class="chat-header-user">
+            <div class="chat-header-avatar" id="chat-header-avatar">WA</div>
+            <div>
+              <div class="chat-user-title" id="chat-title-name">User Name</div>
+              <div class="chat-meta" id="chat-title-id">ID: cust_... | Phone: +...</div>
+            </div>
+          </div>
+          <div>
+            <span class="conv-csw" id="chat-csw-pill">Free Reply: 23.5h left</span>
+          </div>
+        </div>
+
+        <div class="messages-container" id="messages-container" style="display: none;">
+          <!-- Injected via JavaScript -->
+        </div>
+
+        <div class="composer" id="composer-pane" style="display: none;">
+          <div class="csw-warning-banner" id="banner-csw-closed">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>Notice: 24-hour customer service window expired. Free replies cannot be delivered. Send manually from the WhatsApp mobile app or use an approved template.</span>
+          </div>
+          <div class="composer-row">
+            <input type="text" id="input-msg" placeholder="Type a message...">
+            <button id="btn-send">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+              <span>Send</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Waitlist Management Panel -->
+    <section class="waitlist-view" id="waitlist-view" style="display: none;">
+      <div class="waitlist-container">
+        <div class="waitlist-header">
+          <div class="waitlist-header-left">
+            <h1 class="waitlist-title">Access Waitlist Requests</h1>
+            <p class="waitlist-subtitle">Accounts that attempted login and are pending approval</p>
+          </div>
+          <div class="waitlist-header-actions">
+            <div class="waitlist-search-wrapper">
+              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="16" y1="16" x2="21" y2="21" />
+              </svg>
+              <input type="text" id="input-waitlist-search" placeholder="Search by email..." autocomplete="off">
+            </div>
+            <button id="btn-waitlist-refresh" class="btn-waitlist-refresh" type="button" title="Refresh waitlist">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+              </svg>
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="waitlist-card">
+          <div class="waitlist-table-wrapper">
+            <table class="waitlist-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Attempts</th>
+                  <th>First Seen</th>
+                  <th>Last Attempt</th>
+                </tr>
+              </thead>
+              <tbody id="waitlist-list">
+                <!-- Injected via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+          <div id="waitlist-empty" class="waitlist-empty" style="display: none;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p>No waitlist requests found</p>
+          </div>
         </div>
       </div>
     </section>
   </main>
+
+  <!-- Authentication Overlay Modal -->
+  <div id="auth-modal" class="auth-overlay" style="display: none;">
+    <div class="auth-card">
+      <div class="auth-logo-wrap">
+        <svg viewBox="0 0 24 24">
+          <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.17c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.4c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.01 4.54-3.69 8.25-8.22 8.25z"/>
+        </svg>
+      </div>
+      <h2 class="auth-title">WhatsApp Business Hub</h2>
+      <p class="auth-subtitle">Enter administrator credentials to access live client conversations and messaging tools.</p>
+      
+      <div id="auth-error" class="auth-error"></div>
+
+      <div id="auth-waitlist-notice" class="auth-waitlist-notice" style="display: none;">
+        <div class="auth-waitlist-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div class="auth-waitlist-content">
+          <div class="auth-waitlist-title">Access Request Waitlisted</div>
+          <div class="auth-waitlist-msg" id="auth-waitlist-msg">Your account is pending administrator approval. We will review your request shortly.</div>
+        </div>
+      </div>
+
+      <form id="auth-form" class="auth-form" onsubmit="return false;">
+        <div class="auth-input-wrap">
+          <input type="email" id="input-auth-email" placeholder="Enter your email" autocomplete="email" required>
+        </div>
+        <div class="auth-input-wrap">
+          <input type="password" id="input-auth-password" placeholder="Enter your password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" id="btn-auth-login" class="btn-auth-login">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Unlock Dashboard</span>
+        </button>
+      </form>
+    </div>
+  </div>
 
   <script src="/app.js"></script>
 </body>

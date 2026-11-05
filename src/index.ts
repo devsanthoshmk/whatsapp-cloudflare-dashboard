@@ -3,6 +3,10 @@ import { cors } from 'hono/cors';
 import type { Env } from './types';
 import { handleWebhookVerification, handleWebhookPost } from './handlers/webhook';
 import {
+  handleAuthLogin,
+  handleAuthLogout,
+  handleAuthCheck,
+  handleGetWaitlist,
   handleGetConversations,
   handleGetMessages,
   handleSendMessage,
@@ -10,6 +14,7 @@ import {
   handleGetMedia,
   handleGetStats
 } from './handlers/api';
+import { AuthService } from './services/auth';
 import { R2ZeroBillingGuard } from './services/r2-guard';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -17,11 +22,44 @@ const app = new Hono<{ Bindings: Env }>();
 // Enable CORS for API routes
 app.use('/api/*', cors());
 
-// Webhook routes
+// Auth middleware to protect all /api/* routes EXCEPT /api/auth/* and /api/health
+app.use('/api/*', async (c, next) => {
+  // Pass through preflight CORS checks
+  if (c.req.method === 'OPTIONS') {
+    return next();
+  }
+
+  const path = c.req.path;
+  if (path.startsWith('/api/auth/') || path === '/api/health') {
+    return next();
+  }
+
+  const cookieHeader = c.req.header('Cookie') || c.req.header('cookie');
+  const token = AuthService.extractSessionCookie(cookieHeader);
+  if (!token) {
+    return c.json({ error: 'UNAUTHORIZED', message: 'Authentication required' }, 401);
+  }
+
+  const secret = c.env.AUTH_SECRET || '[REDACTED]';
+  const isValid = await AuthService.verifySessionToken(token, secret);
+  if (!isValid) {
+    return c.json({ error: 'UNAUTHORIZED', message: 'Authentication required' }, 401);
+  }
+
+  return next();
+});
+
+// Webhook routes (exempt from session auth so Meta/YCloud webhooks can deliver)
 app.get('/webhook', handleWebhookVerification);
 app.post('/webhook', handleWebhookPost);
 
+// Auth routes
+app.post('/api/auth/login', handleAuthLogin);
+app.post('/api/auth/logout', handleAuthLogout);
+app.get('/api/auth/check', handleAuthCheck);
+
 // API routes
+app.get('/api/waitlist', handleGetWaitlist);
 app.get('/api/conversations', handleGetConversations);
 app.get('/api/messages/:wa_id', handleGetMessages);
 app.post('/api/send', handleSendMessage);

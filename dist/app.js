@@ -2,12 +2,26 @@
 
 (function () {
   let isReadyState = false;
+  let isAuthenticated = false;
+  let activeView = 'chat'; // 'chat' or 'waitlist'
   let currentConversations = [];
   let activeCustomer = null;
   let currentMessages = [];
   let currentStats = null;
+  let currentWaitlist = [];
 
-  // DOM Elements
+  // DOM Elements - Navigation & Views
+  const btnViewChatEl = document.getElementById('btn-view-chat');
+  const btnViewWaitlistEl = document.getElementById('btn-view-waitlist');
+  const badgeWaitlistCountEl = document.getElementById('badge-waitlist-count');
+  const chatViewEl = document.getElementById('chat-view');
+  const waitlistViewEl = document.getElementById('waitlist-view');
+  const inputWaitlistSearchEl = document.getElementById('input-waitlist-search');
+  const btnWaitlistRefreshEl = document.getElementById('btn-waitlist-refresh');
+  const waitlistListEl = document.getElementById('waitlist-list');
+  const waitlistEmptyEl = document.getElementById('waitlist-empty');
+
+  // DOM Elements - Chat & Conversations
   const convListEl = document.getElementById('conv-list');
   const chatEmptyEl = document.getElementById('chat-empty');
   const chatHeaderEl = document.getElementById('chat-header');
@@ -28,6 +42,188 @@
   const textR2StatEl = document.getElementById('text-r2-stat');
   const badgeR2StatusEl = document.getElementById('badge-r2-status');
 
+  // Auth DOM
+  const authModalEl = document.getElementById('auth-modal');
+  const inputAuthEmailEl = document.getElementById('input-auth-email');
+  const inputAuthPasswordEl = document.getElementById('input-auth-password');
+  const btnAuthLoginEl = document.getElementById('btn-auth-login');
+  const authErrorEl = document.getElementById('auth-error');
+  const authWaitlistNoticeEl = document.getElementById('auth-waitlist-notice');
+  const authWaitlistMsgEl = document.getElementById('auth-waitlist-msg');
+  const btnAuthLogoutEl = document.getElementById('btn-auth-logout');
+  const mainEl = document.querySelector('main');
+  const metricsGroupEl = document.getElementById('metrics-group');
+
+  // Native fetch reference & global 401 interceptor
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async function (input, init) {
+    const res = await nativeFetch(input, init);
+    const urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+    if (res && res.status === 401 && !urlStr.includes('/api/auth/login')) {
+      setAuthenticatedState(false);
+    }
+    return res;
+  };
+
+  // Auth State Controller
+  function setAuthenticatedState(authed) {
+    isAuthenticated = Boolean(authed);
+    if (isAuthenticated) {
+      if (authModalEl) authModalEl.style.display = 'none';
+      if (mainEl) mainEl.style.display = 'flex';
+      if (metricsGroupEl) metricsGroupEl.style.display = 'flex';
+      if (btnAuthLogoutEl) btnAuthLogoutEl.style.display = 'inline-flex';
+      if (authErrorEl) {
+        authErrorEl.style.display = 'none';
+        authErrorEl.textContent = '';
+      }
+      if (authWaitlistNoticeEl) {
+        authWaitlistNoticeEl.style.display = 'none';
+      }
+    } else {
+      if (authModalEl) authModalEl.style.display = 'flex';
+      if (mainEl) mainEl.style.display = 'none';
+      if (metricsGroupEl) metricsGroupEl.style.display = 'none';
+      if (btnAuthLogoutEl) btnAuthLogoutEl.style.display = 'none';
+      if (inputAuthPasswordEl) {
+        inputAuthPasswordEl.value = '';
+      }
+    }
+  }
+
+  // View Switcher: 'chat' | 'waitlist'
+  function switchView(viewName) {
+    activeView = viewName === 'waitlist' ? 'waitlist' : 'chat';
+    if (activeView === 'waitlist') {
+      if (chatViewEl) chatViewEl.style.display = 'none';
+      if (waitlistViewEl) waitlistViewEl.style.display = 'flex';
+      if (btnViewChatEl) btnViewChatEl.classList.remove('active');
+      if (btnViewWaitlistEl) btnViewWaitlistEl.classList.add('active');
+      loadWaitlist();
+    } else {
+      if (waitlistViewEl) waitlistViewEl.style.display = 'none';
+      if (chatViewEl) chatViewEl.style.display = 'flex';
+      if (btnViewWaitlistEl) btnViewWaitlistEl.classList.remove('active');
+      if (btnViewChatEl) btnViewChatEl.classList.add('active');
+    }
+  }
+
+  // Perform Login
+  async function performLogin(emailParam, passwordParam) {
+    let email = emailParam;
+    let pwd = passwordParam;
+
+    if (email === undefined && pwd === undefined) {
+      email = inputAuthEmailEl ? inputAuthEmailEl.value.trim() : '';
+      pwd = inputAuthPasswordEl ? inputAuthPasswordEl.value : '';
+    } else if (pwd === undefined) {
+      // Single parameter call: if it contains @, treat as email; else password
+      if (typeof email === 'string' && email.includes('@')) {
+        pwd = '[REDACTED]';
+      } else {
+        pwd = email;
+        email = 'connectwithsanthoshmk@gmail.com';
+      }
+    }
+
+    if (!email) {
+      if (authErrorEl) {
+        authErrorEl.textContent = 'Please enter an email address.';
+        authErrorEl.style.display = 'block';
+      }
+      if (authWaitlistNoticeEl) authWaitlistNoticeEl.style.display = 'none';
+      return false;
+    }
+
+    if (!pwd) {
+      if (authErrorEl) {
+        authErrorEl.textContent = 'Please enter a password.';
+        authErrorEl.style.display = 'block';
+      }
+      if (authWaitlistNoticeEl) authWaitlistNoticeEl.style.display = 'none';
+      return false;
+    }
+
+    if (btnAuthLoginEl) btnAuthLoginEl.disabled = true;
+    try {
+      const res = await nativeFetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pwd })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 403) {
+        // Account Waitlisted
+        if (authErrorEl) authErrorEl.style.display = 'none';
+        if (authWaitlistNoticeEl) {
+          authWaitlistNoticeEl.style.display = 'flex';
+          if (authWaitlistMsgEl) {
+            authWaitlistMsgEl.textContent = data.message || 'This account is waitlisted. An administrator will review your access request.';
+          }
+        }
+        setAuthenticatedState(false);
+        isReadyState = true;
+        return false;
+      }
+
+      if (res.ok) {
+        // Successful Admin Login
+        setAuthenticatedState(true);
+        if (inputAuthPasswordEl) inputAuthPasswordEl.value = '';
+        if (authErrorEl) {
+          authErrorEl.textContent = '';
+          authErrorEl.style.display = 'none';
+        }
+        if (authWaitlistNoticeEl) {
+          authWaitlistNoticeEl.style.display = 'none';
+        }
+        await Promise.all([loadStats(), loadConversations(), loadWaitlist()]);
+        isReadyState = true;
+        return true;
+      } else {
+        // Invalid Credentials
+        if (authWaitlistNoticeEl) authWaitlistNoticeEl.style.display = 'none';
+        if (authErrorEl) {
+          authErrorEl.textContent = data.message || data.error || 'Incorrect password.';
+          authErrorEl.style.display = 'block';
+        }
+        setAuthenticatedState(false);
+        isReadyState = true;
+        return false;
+      }
+    } catch (err) {
+      if (authWaitlistNoticeEl) authWaitlistNoticeEl.style.display = 'none';
+      if (authErrorEl) {
+        authErrorEl.textContent = `Login failed: ${err.message}`;
+        authErrorEl.style.display = 'block';
+      }
+      setAuthenticatedState(false);
+      isReadyState = true;
+      return false;
+    } finally {
+      if (btnAuthLoginEl) btnAuthLoginEl.disabled = false;
+    }
+  }
+
+  // Perform Logout
+  async function performLogout() {
+    try {
+      await nativeFetch('/api/auth/logout', { method: 'POST' });
+    } catch (err) {
+      console.warn('Logout error:', err);
+    }
+    activeCustomer = null;
+    currentConversations = [];
+    currentMessages = [];
+    currentStats = null;
+    currentWaitlist = [];
+    setAuthenticatedState(false);
+    isReadyState = true;
+    return true;
+  }
+
   // Fetch Usage Stats
   async function loadStats() {
     try {
@@ -38,17 +234,6 @@
       valMonthlyCswEl.textContent = `${currentStats.monthlyServiceCount} / ${currentStats.monthlyServiceLimit} Free`;
       valDailyTierEl.textContent = `${currentStats.dailyRecipientsCount} / ${currentStats.dailyRecipientsLimit}`;
       valWalletEl.textContent = `$${currentStats.walletBalance.toFixed(2)} ${currentStats.currency}`;
-
-      const barMonthly = document.getElementById('bar-monthly-csw');
-      if (barMonthly) {
-        const pct = Math.min(100, Math.round((currentStats.monthlyServiceCount / currentStats.monthlyServiceLimit) * 100));
-        barMonthly.style.width = `${pct}%`;
-      }
-      const barDaily = document.getElementById('bar-daily-tier');
-      if (barDaily) {
-        const pct = Math.min(100, Math.round((currentStats.dailyRecipientsCount / currentStats.dailyRecipientsLimit) * 100));
-        barDaily.style.width = `${pct}%`;
-      }
 
       const r2Mb = (currentStats.r2.storageBytes / (1024 * 1024)).toFixed(2);
       textR2StatEl.textContent = `${r2Mb} MB / 9.00 GB`;
@@ -63,6 +248,53 @@
     } catch (err) {
       console.warn('Failed to load stats:', err);
     }
+  }
+
+  // Fetch Waitlist
+  async function loadWaitlist() {
+    try {
+      const res = await fetch('/api/waitlist');
+      if (!res.ok) return;
+      const data = await res.json();
+      currentWaitlist = data.waitlist || [];
+      if (badgeWaitlistCountEl) {
+        badgeWaitlistCountEl.textContent = currentWaitlist.length;
+      }
+      renderWaitlist();
+    } catch (err) {
+      console.warn('Failed to load waitlist:', err);
+    }
+  }
+
+  // Render Waitlist Table
+  function renderWaitlist() {
+    if (!waitlistListEl) return;
+    waitlistListEl.innerHTML = '';
+
+    const filter = (inputWaitlistSearchEl?.value || '').toLowerCase().trim();
+    const filtered = currentWaitlist.filter(w => w.email.toLowerCase().includes(filter));
+
+    if (filtered.length === 0) {
+      if (waitlistEmptyEl) waitlistEmptyEl.style.display = 'flex';
+      return;
+    }
+
+    if (waitlistEmptyEl) waitlistEmptyEl.style.display = 'none';
+
+    filtered.forEach(entry => {
+      const tr = document.createElement('tr');
+      const firstSeen = new Date(entry.created_at * 1000).toLocaleString();
+      const lastAttempt = new Date(entry.last_attempt_at * 1000).toLocaleString();
+
+      tr.innerHTML = `
+        <td class="waitlist-email">${escapeHtml(entry.email)}</td>
+        <td><span class="badge badge-warning" style="font-size: 0.72rem;">${escapeHtml(entry.status || 'pending')}</span></td>
+        <td class="waitlist-attempts">${entry.attempt_count} attempt${entry.attempt_count > 1 ? 's' : ''}</td>
+        <td class="waitlist-time">${firstSeen}</td>
+        <td class="waitlist-time">${lastAttempt}</td>
+      `;
+      waitlistListEl.appendChild(tr);
+    });
   }
 
   // Fetch Conversation List
@@ -81,7 +313,7 @@
   // Render Conversation List
   function renderConversations() {
     convListEl.innerHTML = '';
-    const filter = (inputSearchEl.value || '').toLowerCase().trim();
+    const filter = (inputSearchEl?.value || '').toLowerCase().trim();
 
     const filtered = currentConversations.filter(c => 
       (c.name || '').toLowerCase().includes(filter) ||
@@ -102,30 +334,13 @@
       const cswClass = c.csw.isActive ? 'csw-active' : 'csw-closed';
       const lastMsgText = c.lastMessage?.body || `[${c.lastMessage?.type || 'Message'}]`;
 
-      const rawName = (c.name || c.phoneNumber || 'User').trim();
-      const initials = rawName
-        .replace(/[^a-zA-Z0-9 ]/g, '')
-        .trim()
-        .split(/\s+/)
-        .map(w => w[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase() || 'WA';
-
-      const clockIcon = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:middle; margin-right:3px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-
       item.innerHTML = `
-        <div class="conv-avatar">${escapeHtml(initials)}</div>
-        <div class="conv-content">
-          <div class="conv-header">
-            <span class="conv-name">${escapeHtml(c.name || c.phoneNumber)}</span>
-            <span class="conv-cust-id">${escapeHtml(c.id)}</span>
-          </div>
-          <div class="conv-snippet">${escapeHtml(lastMsgText)}</div>
-          <div class="conv-footer">
-            <span class="conv-csw ${cswClass}">${c.csw.isActive ? clockIcon : ''}${escapeHtml(c.csw.label)}</span>
-          </div>
+        <div class="conv-header">
+          <span class="conv-name">${escapeHtml(c.name || c.phoneNumber)}</span>
+          <span class="conv-cust-id">${escapeHtml(c.id)}</span>
         </div>
+        <div class="conv-snippet">${escapeHtml(lastMsgText)}</div>
+        <span class="conv-csw ${cswClass}">${escapeHtml(c.csw.label)}</span>
       `;
 
       item.addEventListener('click', () => selectCustomer(c.waId));
@@ -149,28 +364,13 @@
     chatTitleNameEl.textContent = activeCustomer.name || activeCustomer.phoneNumber;
     chatTitleIdEl.textContent = `ID: ${activeCustomer.id} | Phone: ${activeCustomer.phoneNumber}`;
 
-    const headerAvatarEl = document.getElementById('chat-header-avatar');
-    if (headerAvatarEl) {
-      const rawName = (activeCustomer.name || activeCustomer.phoneNumber || 'User').trim();
-      const initials = rawName
-        .replace(/[^a-zA-Z0-9 ]/g, '')
-        .trim()
-        .split(/\s+/)
-        .map(w => w[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase() || 'WA';
-      headerAvatarEl.textContent = initials;
-    }
-
     const cswClass = activeCustomer.csw.isActive ? 'csw-active' : 'csw-closed';
     chatCswPillEl.className = `conv-csw ${cswClass}`;
-    const clockIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:middle; margin-right:4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-    chatCswPillEl.innerHTML = `${activeCustomer.csw.isActive ? clockIcon : ''}<span>${escapeHtml(activeCustomer.csw.label)}</span>`;
+    chatCswPillEl.textContent = activeCustomer.csw.label;
 
     // CSW closed banner & composer lock
     if (!activeCustomer.csw.isActive) {
-      bannerCswClosedEl.style.display = 'block';
+      bannerCswClosedEl.style.display = 'flex';
       inputMsgEl.disabled = true;
       btnSendEl.disabled = true;
       inputMsgEl.placeholder = 'Customer service window closed (>24h).';
@@ -252,25 +452,15 @@
       const timeStr = new Date(msg.created_at * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const statusClass = `status-${msg.status}`;
 
-      let ticksHtml = '';
-      if (msg.direction === 'outbound') {
-        let tickSymbol = '✓✓';
-        if (msg.status === 'sent') tickSymbol = '✓';
-        else if (msg.status === 'failed') tickSymbol = '!';
-        else if (msg.status === 'pending') tickSymbol = '•';
-
-        ticksHtml = `<span class="status-ticks ${statusClass}" title="${escapeHtml(msg.status)}">${tickSymbol}</span>`;
-      }
-
       row.innerHTML = `
         <div class="msg-bubble">
-          ${msg.body ? `<div class="msg-text">${escapeHtml(msg.body)}</div>` : ''}
+          ${msg.body ? `<div>${escapeHtml(msg.body)}</div>` : ''}
           ${mediaHtml}
           ${errorHtml}
-          <div class="msg-footer">
-            <span class="msg-time">${timeStr}</span>
-            ${msg.direction === 'outbound' ? `<span class="msg-status ${statusClass}">${ticksHtml}</span>` : ''}
-          </div>
+        </div>
+        <div class="msg-footer">
+          <span>${timeStr}</span>
+          ${msg.direction === 'outbound' ? `<span class="msg-status ${statusClass}">• ${msg.status}</span>` : ''}
         </div>
       `;
 
@@ -316,14 +506,43 @@
   }
 
   // Event Listeners
-  btnSendEl.addEventListener('click', () => sendMessage());
-  inputMsgEl.addEventListener('keydown', (e) => {
+  btnSendEl?.addEventListener('click', () => sendMessage());
+  inputMsgEl?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
-  inputSearchEl.addEventListener('input', renderConversations);
+  inputSearchEl?.addEventListener('input', renderConversations);
+
+  // View Switcher Event Listeners
+  btnViewChatEl?.addEventListener('click', () => switchView('chat'));
+  btnViewWaitlistEl?.addEventListener('click', () => switchView('waitlist'));
+  btnWaitlistRefreshEl?.addEventListener('click', () => loadWaitlist());
+  inputWaitlistSearchEl?.addEventListener('input', renderWaitlist);
+
+  if (btnAuthLoginEl) {
+    btnAuthLoginEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      performLogin();
+    });
+  }
+
+  if (inputAuthPasswordEl) {
+    inputAuthPasswordEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performLogin();
+      }
+    });
+  }
+
+  if (btnAuthLogoutEl) {
+    btnAuthLogoutEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      performLogout();
+    });
+  }
 
   // Helper Utilities
   function escapeHtml(str) {
@@ -350,6 +569,21 @@
   window.site = {
     isReady: () => isReadyState,
 
+    login: async (emailOrPassword, maybePassword) => {
+      return await performLogin(emailOrPassword, maybePassword);
+    },
+
+    logout: async () => {
+      return await performLogout();
+    },
+
+    switchView: (viewName) => {
+      switchView(viewName);
+      return activeView;
+    },
+
+    getWaitlist: () => currentWaitlist,
+
     getState: () => {
       const r2 = currentStats?.r2 || {
         storageBytes: 0,
@@ -360,11 +594,14 @@
       };
 
       return {
-        route: activeCustomer ? `/chat/${activeCustomer.waId}` : '/conversations',
+        isAuthenticated: isAuthenticated,
+        activeView: activeView,
+        route: !isAuthenticated ? '/login' : (activeView === 'waitlist' ? '/waitlist' : (activeCustomer ? `/chat/${activeCustomer.waId}` : '/conversations')),
         activeCustomerWaId: activeCustomer?.waId || null,
         activeCustomerId: activeCustomer?.id || null,
         customerCount: currentConversations.length,
         messageCount: currentMessages.length,
+        waitlistCount: currentWaitlist.length,
         freeMonthlyRemaining: currentStats ? (currentStats.monthlyServiceLimit - currentStats.monthlyServiceCount) : 1000,
         dailyRemaining: currentStats ? (currentStats.dailyRecipientsLimit - currentStats.dailyRecipientsCount) : 250,
         cswActive: activeCustomer?.csw.isActive || false,
@@ -380,6 +617,55 @@
     },
 
     getAsciiDiagram: () => {
+      if (!isAuthenticated) {
+        let out = '';
+        out += '+-----------------------------------------------------------------------------------------+\n';
+        out += '|                           WHATSAPP BUSINESS HUB - LOGIN                                 |\n';
+        out += '+-----------------------------------------------------------------------------------------+\n';
+        out += '|                                                                                         |\n';
+        out += '|                            +-------------------------------+                            |\n';
+        out += '|                            |  [#auth-modal] Access Portal  |                            |\n';
+        out += '|                            |                               |                            |\n';
+        out += '|                            |  [#input-auth-email]          |                            |\n';
+        out += '|                            |  [ email@example.com ]        |                            |\n';
+        out += '|                            |                               |                            |\n';
+        out += '|                            |  [#input-auth-password]       |                            |\n';
+        out += '|                            |  [ •••••••••••••••• ]         |                            |\n';
+        out += '|                            |                               |                            |\n';
+        out += '|                            |  [#btn-auth-login]            |                            |\n';
+        out += '|                            |  [ Unlock Dashboard ]         |                            |\n';
+        if (authWaitlistNoticeEl && authWaitlistNoticeEl.style.display !== 'none') {
+          out += '|                            |  [!] WAITLISTED: Access Pndg  |                            |\n';
+        } else if (authErrorEl && authErrorEl.style.display !== 'none' && authErrorEl.textContent) {
+          const errText = authErrorEl.textContent.slice(0, 25);
+          out += `|                            |  [!] Error: ${errText.padEnd(18)}|                            |\n`;
+        }
+        out += '|                            +-------------------------------+                            |\n';
+        out += '|                                                                                         |\n';
+        out += '+-----------------------------------------------------------------------------------------+\n';
+        return out;
+      }
+
+      if (activeView === 'waitlist') {
+        let out = '';
+        out += '+-----------------------------------------------------------------------------------------+\n';
+        out += `| [Header] Phone: +91 91766 50591 | [View: Waitlist (${currentWaitlist.length})] | [#btn-auth-logout]            |\n`;
+        out += '+-----------------------------------------------------------------------------------------+\n';
+        out += '| [#btn-view-chat] [Messages] | *[#btn-view-waitlist] [Waitlist Requests]                 |\n';
+        out += '|-----------------------------------------------------------------------------------------|\n';
+        out += '| EMAIL                              | STATUS    | ATTEMPTS | FIRST SEEN | LAST ATTEMPT   |\n';
+        out += '|------------------------------------+-----------+----------+------------+----------------|\n';
+        if (currentWaitlist.length === 0) {
+          out += '| (No waitlisted accounts yet)                                                            |\n';
+        } else {
+          currentWaitlist.slice(0, 5).forEach(w => {
+            out += `| ${w.email.padEnd(34)} | ${w.status.padEnd(9)} | ${String(w.attempt_count).padEnd(8)} | Recent     | Just now       |\n`;
+          });
+        }
+        out += '+-----------------------------------------------------------------------------------------+\n';
+        return out;
+      }
+
       const stats = currentStats || { monthlyServiceCount: 0, dailyRecipientsCount: 0, walletBalance: 0.5 };
       const r2 = stats.r2 || { storageBytes: 0, isCapped: false };
       const r2Mb = (r2.storageBytes / (1024 * 1024)).toFixed(2);
@@ -388,7 +674,9 @@
       let out = '';
       out += '+-----------------------------------------------------------------------------------------+\n';
       out += `| [Header] Phone: +91 91766 50591 | Monthly Free: ${stats.monthlyServiceCount}/1000 | Daily: ${stats.dailyRecipientsCount}/250 | Bal: $${stats.walletBalance.toFixed(2)} |\n`;
-      out += `| ${r2Badge} Storage: ${r2Mb} MB / 9.00 GB Ceiling                                        |\n`;
+      out += `| ${r2Badge} Storage: ${r2Mb} MB / 9.00 GB Ceiling                        [#btn-auth-logout] |\n`;
+      out += '+-----------------------------------------------------------------------------------------+\n';
+      out += `| *[#btn-view-chat] [Messages] | [#btn-view-waitlist] [Waitlist (${currentWaitlist.length})]                       |\n`;
       out += '+-----------------------------------------------------------------------------------------+\n';
 
       if (!activeCustomer) {
@@ -424,56 +712,122 @@
     },
 
     getClickables: () => {
-      const items = [];
+      if (!isAuthenticated) {
+        return [
+          {
+            id: 'input-auth-email',
+            label: 'Email Input Field',
+            selector: '#input-auth-email',
+            disabled: inputAuthEmailEl ? inputAuthEmailEl.disabled : false
+          },
+          {
+            id: 'input-auth-password',
+            label: 'Password Input Field',
+            selector: '#input-auth-password',
+            disabled: inputAuthPasswordEl ? inputAuthPasswordEl.disabled : false
+          },
+          {
+            id: 'btn-auth-login',
+            label: 'Login Button',
+            selector: '#btn-auth-login',
+            disabled: btnAuthLoginEl ? btnAuthLoginEl.disabled : false
+          }
+        ];
+      }
 
-      currentConversations.forEach(c => {
+      const items = [
+        {
+          id: 'btn-view-chat',
+          label: 'Messages View Button',
+          selector: '#btn-view-chat',
+          disabled: false
+        },
+        {
+          id: 'btn-view-waitlist',
+          label: `Waitlist View Button (${currentWaitlist.length})`,
+          selector: '#btn-view-waitlist',
+          disabled: false
+        }
+      ];
+
+      if (activeView === 'waitlist') {
         items.push({
-          id: `conv-${c.waId}`,
-          label: `Select conversation ${c.name || c.phoneNumber}`,
-          selector: `#conv-${c.waId}`,
-          disabled: false,
-          cswActive: c.csw.isActive
+          id: 'input-waitlist-search',
+          label: 'Search Waitlist Input',
+          selector: '#input-waitlist-search',
+          disabled: false
         });
-      });
+        items.push({
+          id: 'btn-waitlist-refresh',
+          label: 'Refresh Waitlist Button',
+          selector: '#btn-waitlist-refresh',
+          disabled: false
+        });
+      } else {
+        currentConversations.forEach(c => {
+          items.push({
+            id: `conv-${c.waId}`,
+            label: `Select conversation ${c.name || c.phoneNumber}`,
+            selector: `#conv-${c.waId}`,
+            disabled: false,
+            cswActive: c.csw.isActive
+          });
+        });
+
+        items.push({
+          id: 'btn-send',
+          label: 'Send Message Button',
+          selector: '#btn-send',
+          disabled: btnSendEl ? btnSendEl.disabled : false
+        });
+
+        items.push({
+          id: 'input-msg',
+          label: 'Message Input Field',
+          selector: '#input-msg',
+          disabled: inputMsgEl ? inputMsgEl.disabled : false
+        });
+
+        items.push({
+          id: 'input-search',
+          label: 'Search Conversations',
+          selector: '#input-search',
+          disabled: false
+        });
+      }
 
       items.push({
-        id: 'btn-send',
-        label: 'Send Message Button',
-        selector: '#btn-send',
-        disabled: btnSendEl.disabled
-      });
-
-      items.push({
-        id: 'input-msg',
-        label: 'Message Input Field',
-        selector: '#input-msg',
-        disabled: inputMsgEl.disabled
-      });
-
-      items.push({
-        id: 'input-search',
-        label: 'Search Conversations',
-        selector: '#input-search',
+        id: 'btn-auth-logout',
+        label: 'Logout Button',
+        selector: '#btn-auth-logout',
         disabled: false
       });
 
       return items;
-    },
-
-    selectCustomer: async (waId) => {
-      return await selectCustomer(waId);
-    },
-
-    sendMessage: async (text) => {
-      return await sendMessage(text);
     }
   };
 
   // Initial Boot
   async function init() {
-    await loadStats();
-    await loadConversations();
-    isReadyState = true;
+    try {
+      const res = await nativeFetch('/api/auth/check');
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.authenticated) {
+          setAuthenticatedState(true);
+          await Promise.all([loadStats(), loadConversations(), loadWaitlist()]);
+        } else {
+          setAuthenticatedState(false);
+        }
+      } else {
+        setAuthenticatedState(false);
+      }
+    } catch (err) {
+      console.warn('Auth check failed:', err);
+      setAuthenticatedState(false);
+    } finally {
+      isReadyState = true;
+    }
   }
 
   init();
