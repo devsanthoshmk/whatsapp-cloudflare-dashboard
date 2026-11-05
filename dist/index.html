@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Business Hub | Cloudflare Workers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0b0c10;
+      --bg-surface: #11131b;
+      --bg-elevated: #181b26;
+      --bg-hover: rgba(255, 255, 255, 0.04);
+      --bg-active: rgba(0, 168, 132, 0.1);
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      
+      --text-primary: #f3f4f6;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      
+      --wa-emerald: #00a884;
+      --wa-emerald-hover: #029474;
+      --wa-emerald-glow: rgba(0, 168, 132, 0.35);
+      --wa-pulse: #25d366;
+      --bubble-out: #005c4b;
+      --bubble-in: #181c27;
+      --tick-read: #53bdeb;
+      --tick-delivered: #8696a0;
+      
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #38bdf8;
+      
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    /* Top Brand & Segmented Metrics Header */
+    header {
+      background: rgba(17, 19, 27, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.65rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      z-index: 20;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo-wrap {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #00a884 0%, #005c4b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px var(--wa-emerald-glow);
+    }
+
+    .brand-logo-wrap svg {
+      width: 18px;
+      height: 18px;
+      fill: #ffffff;
+    }
+
+    .brand-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      letter-spacing: -0.015em;
+      color: #ffffff;
+    }
+
+    .brand-subtitle {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .status-badge, .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.73rem;
+      font-weight: 500;
+      padding: 0.22rem 0.6rem;
+      border-radius: 999px;
+      transition: all 0.2s ease;
+    }
+
+    #badge-conn-status {
+      background: rgba(0, 168, 132, 0.12);
+      color: #2ee59d;
+      border: 1px solid rgba(0, 168, 132, 0.25);
+    }
+
+    .pulse-dot {
+      width: 6.5px;
+      height: 6.5px;
+      border-radius: 50%;
+      background-color: var(--wa-pulse);
+      box-shadow: 0 0 8px var(--wa-pulse);
+      animation: pulseGlow 2.4s infinite ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .badge-success {
+      background: rgba(0, 168, 132, 0.12);
+      color: #2ee59d;
+      border: 1px solid rgba(0, 168, 132, 0.25);
+    }
+    .badge-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fde68a;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* Segmented Metrics Strip */
+    .metrics-group {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+
+    .metric-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0.35rem 0.8rem;
+      min-width: 130px;
+      gap: 0.18rem;
+      transition: background 0.15s ease;
+    }
+
+    .metric-card:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .metric-label {
+      font-size: 0.67rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    .metric-val {
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .metric-divider {
+      width: 1px;
+      background: var(--border-subtle);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 0.15rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00a884, #25d366);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    .metric-r2-val {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: #f1f5f9;
+    }
+
+    /* Main Container */
+    main {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 61px);
+      overflow: hidden;
+      background: var(--bg-base);
+    }
+
+    /* Sidebar Conversations */
+    .sidebar {
+      width: 330px;
+      min-width: 290px;
+      max-width: 380px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    .search-box {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      width: 15px;
+      height: 15px;
+      stroke: var(--text-muted);
+      stroke-width: 2;
+      pointer-events: none;
+    }
+
+    .search-box input {
+      width: 100%;
+      background: #161822;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      padding: 0.52rem 0.75rem 0.52rem 2.2rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: rgba(0, 168, 132, 0.5);
+      background: #181b26;
+      box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.12);
+    }
+
+    .conversations-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .conv-item {
+      padding: 0.75rem 0.85rem;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      position: relative;
+    }
+
+    .conv-item:hover {
+      background: var(--bg-hover);
+      border-color: rgba(255, 255, 255, 0.04);
+    }
+
+    .conv-item.active {
+      background: var(--bg-active);
+      border-color: rgba(0, 168, 132, 0.28);
+    }
+
+    .conv-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 15%;
+      bottom: 15%;
+      width: 3px;
+      border-radius: 0 4px 4px 0;
+      background: var(--wa-emerald);
+      box-shadow: 0 0 8px var(--wa-emerald-glow);
+    }
+
+    /* Customer Avatar Circle */
+    .conv-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1e2230 0%, #2a3044 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .conv-item.active .conv-avatar {
+      background: linear-gradient(135deg, #005c4b 0%, #00a884 100%);
+      color: #ffffff;
+      border-color: rgba(0, 168, 132, 0.4);
+    }
+
+    .conv-content {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .conv-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .conv-name {
+      font-weight: 600;
+      font-size: 0.86rem;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .conv-cust-id {
+      font-size: 0.66rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .conv-snippet {
+      font-size: 0.77rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+
+    .conv-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.1rem;
+    }
+
+    .conv-csw {
+      font-size: 0.68rem;
+      font-weight: 500;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .csw-active {
+      background: rgba(0, 168, 132, 0.12);
+      color: #2ee59d;
+      border: 1px solid rgba(0, 168, 132, 0.22);
+    }
+
+    .csw-closed {
+      background: rgba(148, 163, 184, 0.1);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    /* Chat Pane */
+    .chat-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-base);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Distinctive WhatsApp Wallpaper Texture */
+    .chat-pane::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.035;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-rule='evenodd'%3E%3Cpath d='M14 16h8v2h-8zm0 4h5v2h-5zm36-6h8v2h-8zm0 4h6v2h-6zm-18 20a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm28 14h6v2h-6zm0 4h4v2h-4zM24 60a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0-2a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm40-20h6v2h-6zm0 4h4v2h-4zM10 46h6v2h-6zm0 4h4v2h-4z' fill-opacity='0.9'/%3E%3C/g%3E%3C/svg%3E");
+      z-index: 1;
+    }
+
+    .chat-header {
+      background: rgba(17, 19, 27, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.75rem 1.4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .chat-header-user {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .chat-header-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #005c4b 0%, #00a884 100%);
+      color: #ffffff;
+      font-size: 0.86rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px var(--wa-emerald-glow);
+      border: 1px solid rgba(0, 168, 132, 0.3);
+      flex-shrink: 0;
+    }
+
+    .chat-user-title {
+      font-weight: 700;
+      font-size: 0.96rem;
+      letter-spacing: -0.01em;
+      color: #f8fafc;
+    }
+
+    .chat-meta {
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      margin-top: 0.05rem;
+    }
+
+    /* Messages Thread */
+    .messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      z-index: 2;
+    }
+
+    .msg-row {
+      display: flex;
+      flex-direction: column;
+      max-width: 66%;
+      animation: fadeInMsg 0.18s ease-out;
+    }
+
+    @keyframes fadeInMsg {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-row.inbound {
+      align-self: flex-start;
+    }
+
+    .msg-row.outbound {
+      align-self: flex-end;
+    }
+
+    .msg-bubble {
+      padding: 0.65rem 0.95rem;
+      font-size: 0.875rem;
+      line-height: 1.45;
+      word-break: break-word;
+      position: relative;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+    }
+
+    .inbound .msg-bubble {
+      background: var(--bubble-in);
+      color: #f1f5f9;
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px 14px 14px 3px;
+    }
+
+    .outbound .msg-bubble {
+      background: linear-gradient(145deg, #005c4b 0%, #004d3e 100%);
+      color: #ffffff;
+      border: 1px solid rgba(0, 168, 132, 0.2);
+      border-radius: 14px 14px 3px 14px;
+      box-shadow: 0 2px 8px rgba(0, 92, 75, 0.25);
+    }
+
+    .msg-text {
+      color: inherit;
+    }
+
+    .msg-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.35rem;
+      margin-top: 0.25rem;
+      font-size: 0.68rem;
+      color: rgba(255, 255, 255, 0.55);
+      user-select: none;
+    }
+
+    .outbound .msg-footer {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .msg-time {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Delivery Ticks */
+    .status-ticks {
+      display: inline-flex;
+      align-items: center;
+      font-weight: 700;
+      letter-spacing: -0.1em;
+      font-size: 0.78rem;
+    }
+
+    .status-ticks.status-read {
+      color: var(--tick-read);
+    }
+
+    .status-ticks.status-delivered {
+      color: var(--tick-delivered);
+    }
+
+    .status-ticks.status-sent {
+      color: var(--tick-delivered);
+    }
+
+    .status-ticks.status-failed {
+      color: #fca5a5;
+    }
+
+    /* Media Cards */
+    .media-card {
+      margin-top: 0.45rem;
+      border-radius: 10px;
+      overflow: hidden;
+      max-width: 340px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .media-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 9px;
+    }
+
+    .media-card audio {
+      width: 100%;
+      height: 38px;
+      display: block;
+      margin: 0.2rem 0;
+    }
+
+    .file-download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.5rem 0.85rem;
+      border-radius: 8px;
+      color: #38bdf8;
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 500;
+      border: 1px solid var(--border-subtle);
+      margin-top: 0.45rem;
+      transition: all 0.15s ease;
+    }
+
+    .file-download-btn:hover {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: #7dd3fc;
+    }
+
+    .capped-alert-card {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.26);
+      color: #fca5a5;
+      padding: 0.6rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      margin-top: 0.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .capped-alert-card strong {
+      font-weight: 600;
+      color: #f87171;
+    }
+
+    /* Composer Pane */
+    .composer {
+      background: linear-gradient(180deg, rgba(11, 12, 16, 0) 0%, rgba(11, 12, 16, 0.85) 20%, #0b0c10 100%);
+      padding: 0.75rem 1.5rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 10;
+    }
+
+    .csw-warning-banner {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.26);
+      color: #fde68a;
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .composer-row {
+      display: flex;
+      gap: 0.65rem;
+      align-items: center;
+      background: #141722;
+      padding: 0.35rem 0.45rem 0.35rem 0.85rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
+
+    .composer-row:focus-within {
+      border-color: rgba(0, 168, 132, 0.5);
+      background: #161926;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 0 3px rgba(0, 168, 132, 0.12);
+    }
+
+    .composer input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      padding: 0.5rem 0.25rem;
+      font-size: 0.88rem;
+      font-family: inherit;
+    }
+
+    .composer input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .composer input:focus {
+      outline: none;
+    }
+
+    .composer button {
+      background: var(--wa-emerald);
+      color: #ffffff;
+      font-weight: 600;
+      border: none;
+      padding: 0.55rem 1.15rem;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 0.84rem;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.18s ease;
+      box-shadow: 0 2px 8px var(--wa-emerald-glow);
+    }
+
+    .composer button:hover:not(:disabled) {
+      background: var(--wa-emerald-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--wa-emerald-glow);
+    }
+
+    .composer button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .composer button:disabled {
+      background: #252a39;
+      color: #64748b;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* Empty State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-secondary);
+      gap: 1rem;
+      text-align: center;
+      padding: 2rem;
+      z-index: 2;
+    }
+
+    .empty-icon-shield {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: rgba(0, 168, 132, 0.1);
+      border: 1px solid rgba(0, 168, 132, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0, 168, 132, 0.15);
+    }
+
+    .empty-icon-shield svg {
+      width: 32px;
+      height: 32px;
+      fill: var(--wa-emerald);
+    }
+
+    .empty-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      letter-spacing: -0.015em;
+    }
+
+    .empty-desc {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      max-width: 340px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Bar with Live Limits -->
+  <header>
+    <div class="brand-section">
+      <div class="brand-logo-wrap">
+        <svg viewBox="0 0 24 24">
+          <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.17c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.4c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.01 4.54-3.69 8.25-8.22 8.25z"/>
+        </svg>
+      </div>
+      <div class="brand-info">
+        <span class="brand-title">Santhosh Freelancing</span>
+        <span class="brand-subtitle">WhatsApp Cloud Hub</span>
+      </div>
+      <span class="status-badge badge-success" id="badge-conn-status">
+        <span class="pulse-dot"></span>
+        <span>Connected (+91 91766 50591)</span>
+      </span>
+    </div>
+
+    <!-- Segmented Metrics Strip -->
+    <div class="metrics-group">
+      <div class="metric-card">
+        <span class="metric-label">Monthly free replies</span>
+        <span class="metric-val" id="val-monthly-csw">0 / 1000 Free</span>
+        <div class="progress-track">
+          <div class="progress-fill" id="bar-monthly-csw" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="metric-divider"></div>
+
+      <div class="metric-card">
+        <span class="metric-label">Daily recipient tier</span>
+        <span class="metric-val" id="val-daily-tier">0 / 250</span>
+        <div class="progress-track">
+          <div class="progress-fill" id="bar-daily-tier" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="metric-divider"></div>
+
+      <div class="metric-card">
+        <span class="metric-label">Wallet balance</span>
+        <span class="metric-val" id="val-wallet">$0.50 USD</span>
+      </div>
+
+      <div class="metric-divider"></div>
+
+      <div class="metric-card">
+        <span class="metric-label">R2 storage guard</span>
+        <span class="metric-val" id="val-r2-storage">
+          <span id="text-r2-stat">0.00 MB / 9.00 GB</span>
+          <span class="badge badge-success" id="badge-r2-status">SAFE</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Conversations Sidebar -->
+    <section class="sidebar">
+      <div class="search-box">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="16" y1="16" x2="21" y2="21" />
+          </svg>
+          <input type="text" id="input-search" placeholder="Search conversations...">
+        </div>
+      </div>
+      <div class="conversations-list" id="conv-list">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+
+    <!-- Active Chat Pane -->
+    <section class="chat-pane" id="chat-pane">
+      <div class="empty-state" id="chat-empty">
+        <div class="empty-icon-shield">
+          <svg viewBox="0 0 24 24">
+            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.17c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.4c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.01 4.54-3.69 8.25-8.22 8.25z"/>
+          </svg>
+        </div>
+        <div class="empty-title">WhatsApp Business Live Hub</div>
+        <div class="empty-desc">Select a client conversation from the sidebar to inspect incoming messages, monitor the 24-hour service window, and send replies.</div>
+      </div>
+
+      <div class="chat-header" id="chat-header" style="display: none;">
+        <div class="chat-header-user">
+          <div class="chat-header-avatar" id="chat-header-avatar">WA</div>
+          <div>
+            <div class="chat-user-title" id="chat-title-name">User Name</div>
+            <div class="chat-meta" id="chat-title-id">ID: cust_... | Phone: +...</div>
+          </div>
+        </div>
+        <div>
+          <span class="conv-csw" id="chat-csw-pill">Free Reply: 23.5h left</span>
+        </div>
+      </div>
+
+      <div class="messages-container" id="messages-container" style="display: none;">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <div class="composer" id="composer-pane" style="display: none;">
+        <div class="csw-warning-banner" id="banner-csw-closed">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>Notice: 24-hour customer service window expired. Free replies cannot be delivered. Send manually from the WhatsApp mobile app or use an approved template.</span>
+        </div>
+        <div class="composer-row">
+          <input type="text" id="input-msg" placeholder="Type a message...">
+          <button id="btn-send">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            <span>Send</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "whatsapp-cloudflare-dashboard",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "whatsapp-db",
+      "database_id": "a003e8a8-ec2a-4e40-9a51-7de8366c1e1c"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "whatsapp-media",
+      "preview_bucket_name": "whatsapp-media-dev"
+    }
+  ],
+  "vars": {
+    "PHONE_NUMBER_ID": "1443763802148612",
+    "WABA_ID": "1372244598006760"
+  }
+}

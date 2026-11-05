@@ -1,0 +1,31 @@
+# Environment variables & Secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# Dependencies
+node_modules/
+
+# Cloudflare Wrangler Build Cache
+.wrangler/
+
+# Logs & Runtime Data
+*.log
+messages.log
+messages.json
+cloudflared.log
+webhook-server.log
+
+# Agent & OpenChamber metadata
+.agent/
+.openchamber/
+opencode.json*
+
+# Local MCP Servers & tooling
+ycloud-whatsapp-mcp-server/
+
+# OS files
+.DS_Store
+Thumbs.db

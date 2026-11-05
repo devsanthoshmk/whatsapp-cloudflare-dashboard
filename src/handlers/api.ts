@@ -1,0 +1,346 @@
+import type { Context } from 'hono';
+import type { Env, Customer, Message, UsageStats } from '../types';
+import { R2ZeroBillingGuard } from '../services/r2-guard';
+
+/**
+ * GET /api/conversations
+ * Returns active customer threads with CSW status and last message
+ */
+export async function handleGetConversations(c: Context<{ Bindings: Env }>) {
+  const db = c.env.DB;
+  const now = Math.floor(Date.now() / 1000);
+
+  const query = `
+    SELECT 
+      c.*,
+      m.body AS last_message_body,
+      m.type AS last_message_type,
+      m.direction AS last_message_direction,
+      m.status AS last_message_status,
+      m.created_at AS last_message_time
+    FROM customers c
+    LEFT JOIN (
+      SELECT m1.*
+      FROM messages m1
+      JOIN (
+        SELECT customer_wa_id, MAX(created_at) AS max_time
+        FROM messages
+        GROUP BY customer_wa_id
+      ) m2 ON m1.customer_wa_id = m2.customer_wa_id AND m1.created_at = m2.max_time
+    ) m ON c.wa_id = m.customer_wa_id
+    ORDER BY c.updated_at DESC
+    LIMIT 50;
+  `;
+
+  const { results } = await db.prepare(query).all();
+
+  const conversations = (results || []).map((row: any) => {
+    const isCswActive = now < row.csw_expires_at;
+    const remainingSeconds = Math.max(0, row.csw_expires_at - now);
+    const remainingMinutes = Math.floor(remainingSeconds / 60);
+    const remainingHours = Number((remainingSeconds / 3600).toFixed(1));
+
+    return {
+      id: row.id,
+      waId: row.wa_id,
+      phoneNumber: row.phone_number,
+      name: row.name || 'WhatsApp User',
+      csw: {
+        isActive: isCswActive,
+        expiresAt: row.csw_expires_at,
+        remainingMinutes,
+        remainingHours,
+        source: row.csw_source || 'organic',
+        label: isCswActive ? `Free Reply: ${remainingHours}h left` : '24h Window Closed'
+      },
+      lastMessage: {
+        body: row.last_message_body,
+        type: row.last_message_type,
+        direction: row.last_message_direction,
+        status: row.last_message_status,
+        timestamp: row.last_message_time || row.updated_at
+      },
+      totalMessages: row.total_messages_count
+    };
+  });
+
+  return c.json({ conversations });
+}
+
+/**
+ * GET /api/messages/:wa_id
+ * Returns chat history for a customer
+ */
+export async function handleGetMessages(c: Context<{ Bindings: Env }>) {
+  const waId = c.req.param('wa_id');
+  const db = c.env.DB;
+
+  const { results } = await db.prepare(`
+    SELECT * FROM messages
+    WHERE customer_wa_id = ?1
+    ORDER BY created_at ASC
+    LIMIT 100
+  `).bind(waId).all();
+
+  return c.json({ messages: results || [] });
+}
+
+/**
+ * POST /api/send
+ * Outbound manual reply via YCloud with 24-hour CSW validation
+ */
+export async function handleSendMessage(c: Context<{ Bindings: Env }>) {
+  const db = c.env.DB;
+  const now = Math.floor(Date.now() / 1000);
+
+  let body: { to: string; text: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'INVALID_PAYLOAD', message: 'Invalid JSON payload' }, 400);
+  }
+
+  const { to, text } = body;
+  if (!to || !text || text.trim() === '') {
+    return c.json({ error: 'VALIDATION_ERROR', message: 'Recipient (to) and text body are required' }, 400);
+  }
+
+  const normalizedTo = to.replace(/\+/g, '').trim();
+
+  // 1. Verify Customer Service Window (CSW)
+  const customer = await db.prepare('SELECT * FROM customers WHERE wa_id = ?1').bind(normalizedTo).first<Customer>();
+  if (customer && now >= customer.csw_expires_at) {
+    return c.json({
+      error: 'WINDOW_EXPIRED',
+      code: 'CSW_CLOSED',
+      message: 'Customer Service Window expired (>24h). Free message cannot be delivered. Send via WhatsApp mobile app or use an approved template.',
+      cswExpiresAt: customer.csw_expires_at,
+      now
+    }, 403);
+  }
+
+  // 2. Dispatch message via YCloud API
+  const fromNumber = c.env.PHONE_NUMBER_ID ? undefined : '+919176650591';
+  const apiKey = c.env.YCLOUD_API_KEY || '';
+
+  const payload = {
+    from: '+919176650591',
+    to: `+${normalizedTo}`,
+    type: 'text',
+    text: { body: text.trim() }
+  };
+
+  try {
+    const ycloudRes = await fetch('https://api.ycloud.com/v2/whatsapp/messages/sendDirectly', {
+      method: 'POST',
+      headers: {
+        'X-API-Key': apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const resData: any = await ycloudRes.json();
+
+    if (!ycloudRes.ok) {
+      const errCode = resData?.error?.code || 'SEND_FAILED';
+      const errMsg = resData?.error?.message || 'YCloud API error';
+
+      // Record failed outbound in D1
+      const failedId = `failed_${Date.now()}`;
+      await db.prepare(`
+        INSERT INTO messages (
+          id, customer_wa_id, direction, type, body, 
+          status, error_code, error_message, raw_payload, created_at
+        ) VALUES (?1, ?2, 'outbound', 'text', ?3, 'failed', ?4, ?5, ?6, ?7)
+      `).bind(failedId, normalizedTo, text.trim(), errCode, errMsg, JSON.stringify(resData), now).run();
+
+      return c.json({
+        error: errCode,
+        message: errMsg,
+        details: resData
+      }, ycloudRes.status as any);
+    }
+
+    const messageId = resData.wamid || resData.id || `out_${Date.now()}`;
+
+    // Record successful outbound message in D1
+    await db.prepare(`
+      INSERT INTO messages (
+        id, customer_wa_id, direction, type, body, 
+        status, raw_payload, created_at
+      ) VALUES (?1, ?2, 'outbound', 'text', ?3, 'accepted', ?4, ?5)
+    `).bind(messageId, normalizedTo, text.trim(), JSON.stringify(resData), now).run();
+
+    // Increment monthly service messages counter
+    const monthKey = R2ZeroBillingGuard.getCurrentMonthKey();
+    await db.prepare(`
+      INSERT INTO usage_counters (period_key, period_type, service_messages_sent, unique_recipients_count, updated_at)
+      VALUES (?1, 'monthly', 1, 0, ?2)
+      ON CONFLICT(period_key) DO UPDATE SET
+        service_messages_sent = service_messages_sent + 1,
+        updated_at = excluded.updated_at
+    `).bind(monthKey, now).run();
+
+    return c.json({
+      success: true,
+      messageId,
+      status: resData.status || 'accepted',
+      data: resData
+    });
+  } catch (err: any) {
+    return c.json({ error: 'NETWORK_ERROR', message: err.message }, 500);
+  }
+}
+
+/**
+ * POST /api/upload
+ * Direct file upload with strict 507 Insufficient Storage zero-billing ceiling
+ */
+export async function handleDirectUpload(c: Context<{ Bindings: Env }>) {
+  const db = c.env.DB;
+  const bucket = c.env.MEDIA_BUCKET;
+  const now = Math.floor(Date.now() / 1000);
+
+  const body = await c.req.arrayBuffer();
+  const incomingBytes = body.byteLength;
+
+  if (incomingBytes === 0) {
+    return c.json({ error: 'EMPTY_FILE', message: 'No file content received' }, 400);
+  }
+
+  // Pre-check R2 zero billing ceiling
+  const preCheck = await R2ZeroBillingGuard.preCheckPut(db, incomingBytes);
+  if (!preCheck.allowed) {
+    return c.json({
+      error: 'RESOURCE_EXHAUSTED',
+      code: 'R2_FREE_TIER_LIMIT_REACHED',
+      message: 'Cloudflare R2 free tier safety ceiling reached (9.0 GB or 900,000 Class A ops). Upload rejected to guarantee zero billing.',
+      details: {
+        ceiling_reason: preCheck.reason,
+        current_storage_bytes: preCheck.currentStorageBytes,
+        current_class_a_ops: preCheck.currentClassAOps
+      }
+    }, 507);
+  }
+
+  const contentType = c.req.header('content-type') || 'application/octet-stream';
+  const key = `uploads/${now}_${Math.random().toString(36).slice(2, 8)}`;
+
+  await bucket.put(key, body, {
+    httpMetadata: {
+      contentType,
+      cacheControl: 'public, max-age=31536000, s-maxage=31536000, immutable'
+    }
+  });
+
+  const [stmtStorage, stmtOps] = R2ZeroBillingGuard.getRecordPutStatements(db, incomingBytes, now);
+  await db.batch([stmtStorage, stmtOps]);
+
+  return c.json({
+    success: true,
+    key,
+    url: `/api/media/${encodeURIComponent(key)}`,
+    size: incomingBytes,
+    contentType
+  }, 201);
+}
+
+/**
+ * GET /api/media/:key
+ * Serves media from R2 with Dual Caching:
+ * 1. Cloudflare Edge CDN Caching for external browser requests
+ * 2. Worker Cache API for internal Worker invocations
+ * Also supports Range header (206) for audio scrubbing
+ */
+export async function handleGetMedia(c: Context<{ Bindings: Env }>) {
+  const rawKey = c.req.param('key') || '';
+  const key = decodeURIComponent(rawKey);
+  const db = c.env.DB;
+  const bucket = c.env.MEDIA_BUCKET;
+
+  // 1. Check Worker Cache API first
+  const cache = caches.default;
+  const cacheKey = new Request(c.req.url, c.req.raw);
+  const cachedResponse = await cache.match(cacheKey);
+
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  // 2. Pre-check Class B operations ceiling
+  const check = await R2ZeroBillingGuard.preCheckGet(db);
+  if (!check.allowed) {
+    return c.json({
+      error: 'RESOURCE_EXHAUSTED',
+      code: 'R2_CLASS_B_OPS_CEILING_REACHED',
+      message: 'Monthly Class B read ceiling reached. Please view cached files or upgrade.'
+    }, 429);
+  }
+
+  // 3. Fetch from R2 Bucket with Range support
+  const object = await bucket.get(key, {
+    range: c.req.raw.headers
+  });
+
+  if (!object) {
+    return c.text('Media file not found or expired', 404);
+  }
+
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set('etag', object.httpEtag);
+  // Edge CDN caching: 1 year immutable
+  headers.set('Cache-Control', 'public, max-age=31536000, s-maxage=31536000, immutable');
+
+  const isRange = c.req.header('range') !== undefined;
+  const status = isRange && object.range ? 206 : 200;
+
+  if (object.range && 'offset' in object.range && typeof (object.range as any).offset === 'number' && typeof (object.range as any).length === 'number') {
+    const range = object.range as { offset: number; length: number };
+    const end = range.offset + range.length - 1;
+    headers.set('content-range', `bytes ${range.offset}-${end}/${object.size}`);
+  }
+
+  const response = new Response(object.body, { status, headers });
+
+  // Store in Worker Cache API asynchronously for subsequent internal reads
+  if (status === 200) {
+    c.executionCtx.waitUntil(cache.put(cacheKey, response.clone()));
+  }
+
+  return response;
+}
+
+/**
+ * GET /api/stats
+ * Quota, balance, and R2 zero-billing tracking endpoint
+ */
+export async function handleGetStats(c: Context<{ Bindings: Env }>) {
+  const db = c.env.DB;
+  const monthKey = R2ZeroBillingGuard.getCurrentMonthKey();
+
+  // Monthly service message count
+  const counterRow = await db.prepare('SELECT service_messages_sent FROM usage_counters WHERE period_key = ?1').bind(monthKey).first<{ service_messages_sent: number }>();
+  const monthlyServiceCount = counterRow?.service_messages_sent ?? 0;
+
+  // Daily unique recipients count (distinct active customers in last 24h)
+  const dayAgo = Math.floor(Date.now() / 1000) - 86400;
+  const dailyRow = await db.prepare('SELECT COUNT(DISTINCT wa_id) as count FROM customers WHERE updated_at >= ?1').bind(dayAgo).first<{ count: number }>();
+  const dailyRecipientsCount = dailyRow?.count ?? 0;
+
+  // R2 Zero-Billing Summary
+  const r2Summary = await R2ZeroBillingGuard.getUsageSummary(db);
+
+  const stats: UsageStats = {
+    monthlyServiceCount,
+    monthlyServiceLimit: 1000,
+    dailyRecipientsCount,
+    dailyRecipientsLimit: 250,
+    walletBalance: 0.50,
+    currency: 'USD',
+    r2: r2Summary
+  };
+
+  return c.json(stats);
+}

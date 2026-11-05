@@ -1,0 +1,27 @@
+{
+  "name": "whatsapp-cloud-webhook",
+  "version": "1.0.0",
+  "description": "WhatsApp Cloud API Webhook Server with Cloudflare Quick Tunnel",
+  "main": "server.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs"
+  },
+  "keywords": [
+    "whatsapp",
+    "cloud-api",
+    "webhook"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "hono": "^4.13.16",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261104.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.158.0"
+  }
+}
