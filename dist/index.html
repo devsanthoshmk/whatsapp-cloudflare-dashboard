@@ -955,6 +955,31 @@
       width: 100%;
     }
 
+    .auth-password-wrap input#input-auth-password {
+      padding-right: 2.75rem;
+    }
+
+    .btn-toggle-password {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      padding: 0.35rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: color 0.15s ease;
+    }
+
+    .btn-toggle-password:hover {
+      color: var(--text-primary);
+    }
+
     .auth-input-wrap input {
       width: 100%;
       background: #0b0c10;
@@ -3173,8 +3198,14 @@
         <div class="auth-input-wrap">
           <input type="email" id="input-auth-email" placeholder="Enter your email" autocomplete="email" required>
         </div>
-        <div class="auth-input-wrap">
-          <input type="password" id="input-auth-password" placeholder="Enter your password" autocomplete="current-password" required>
+        <div class="auth-input-wrap auth-password-wrap">
+          <input type="password" id="input-auth-password" placeholder="Enter your password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+          <button type="button" id="btn-toggle-password" class="btn-toggle-password" aria-label="Show password" aria-controls="input-auth-password" aria-pressed="false" tabindex="-1">
+            <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
         </div>
         <button type="submit" id="btn-auth-login" class="btn-auth-login">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">

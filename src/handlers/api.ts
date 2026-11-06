@@ -42,11 +42,11 @@ export async function handleAuthLogin(c: Context<{ Bindings: Env }>) {
 
   const rawEmail = body.email || '';
   const normalizedEmail = rawEmail.trim().toLowerCase();
-  const adminEmail = (c.env.ADMIN_EMAIL || '').trim().toLowerCase();
-  const adminPassword = c.env.ADMIN_PASSWORD;
+  const adminEmail = (c.env.ADMIN_EMAIL || 'connectwithsanthoshmk@gmail.com').trim().toLowerCase();
+  const adminPassword = c.env.ADMIN_PASSWORD || c.env.AUTH_PASSWORD;
 
   if (!adminPassword) {
-    return c.json({ error: 'SERVER_MISCONFIGURED', message: 'ADMIN_PASSWORD is not configured on server' }, 500);
+    return c.json({ error: 'SERVER_MISCONFIGURED', message: 'ADMIN_PASSWORD/AUTH_PASSWORD is not configured on server' }, 500);
   }
 
   if (!normalizedEmail) {
