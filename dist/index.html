@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>WhatsApp Business Hub | Cloudflare Workers</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,7 +45,8 @@
       color: var(--text-primary);
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      height: 100dvh;
+      min-height: 100dvh;
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -248,7 +249,8 @@
     main {
       display: flex;
       flex: 1;
-      height: calc(100vh - 61px);
+      min-height: 0;
+      height: auto;
       overflow: hidden;
       background: var(--bg-base);
     }
@@ -820,6 +822,10 @@
       display: flex;
       align-items: center;
       gap: 0.75rem;
+    }
+
+    .header-util-row {
+      display: contents;
     }
 
     /* Subtle Logout Button */
@@ -2537,6 +2543,308 @@
       color: #4ade80;
       margin-left: 0.5rem;
     }
+
+    /* Mobile Back Button Base (Desktop: hidden) */
+    .btn-chat-back {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      color: #ffffff;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-right: 0.25rem;
+      transition: background 0.15s ease;
+    }
+    .btn-chat-back:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* =========================================================================
+       MOBILE RESPONSIVENESS OVERHAUL (max-width: 768px)
+       ========================================================================= */
+    @media (max-width: 768px) {
+      /* 1. Header Reorganization: 3 Clean Tiers */
+      header {
+        padding: 0.5rem 0.75rem;
+        gap: 0.5rem;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .brand-section {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .brand-info {
+        flex: 1;
+        min-width: 120px;
+      }
+
+      .brand-title {
+        font-size: 0.85rem;
+      }
+
+      .brand-subtitle {
+        font-size: 0.7rem;
+      }
+
+      .status-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+      }
+
+      .view-switcher {
+        width: 100%;
+        display: flex;
+        gap: 0.35rem;
+        margin-top: 0.2rem;
+      }
+
+      .view-nav-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 0.45rem 0.5rem;
+        font-size: 0.76rem;
+        height: 38px;
+      }
+
+      .header-actions {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        align-items: stretch;
+      }
+
+      .header-actions-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 0.5rem;
+      }
+
+      /* Horizontal Momentum Swipeable Metrics Strip */
+      .metrics-group {
+        display: flex !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+        gap: 0.5rem;
+        padding: 0.35rem 0.2rem;
+        scrollbar-width: none;
+        box-sizing: border-box;
+      }
+
+      .metrics-group::-webkit-scrollbar {
+        display: none;
+      }
+
+      .metric-card {
+        flex: 0 0 auto !important;
+        min-width: 135px !important;
+        scroll-snap-align: start;
+        padding: 0.45rem 0.65rem !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+        border: 1px solid var(--border-subtle) !important;
+        border-radius: 8px !important;
+      }
+
+      .metric-divider {
+        display: none !important;
+      }
+
+      /* 2. Mobile Single-Pane Navigation */
+      .btn-chat-back {
+        display: inline-flex !important;
+      }
+
+      #chat-view:not(.mobile-chat-active) .sidebar {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        display: flex !important;
+        flex: 1 !important;
+        border-right: none !important;
+      }
+
+      #chat-view:not(.mobile-chat-active) .chat-pane {
+        display: none !important;
+      }
+
+      #chat-view.mobile-chat-active .sidebar {
+        display: none !important;
+      }
+
+      #chat-view.mobile-chat-active .chat-pane {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        display: flex !important;
+        flex: 1 !important;
+      }
+
+      /* 3. Chat Header & Search Bar */
+      .chat-header {
+        padding: 0.55rem 0.75rem;
+        gap: 0.5rem;
+      }
+
+      .chat-header-user {
+        min-width: 0;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .chat-user-title {
+        font-size: 0.88rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .chat-meta {
+        font-size: 0.68rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .chat-header-actions {
+        gap: 0.35rem;
+      }
+
+      .chat-csw {
+        font-size: 0.68rem;
+        padding: 0.25rem 0.5rem;
+      }
+
+      /* 4. Messages & Composer */
+      .messages-container {
+        padding: 0.65rem 0.65rem !important;
+      }
+
+      .msg-row {
+        max-width: 90% !important;
+      }
+
+      .media-card-wrap, .doc-card, .audio-card {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+
+      .composer {
+        padding: 0.5rem 0.65rem calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
+      }
+
+      /* Eliminate iOS auto-zoom on input focus */
+      .composer input,
+      .composer textarea,
+      .search-box input,
+      .chat-search-bar input,
+      .forward-search-box input,
+      .multisend-search-wrap input,
+      .multisend-textarea {
+        font-size: 16px !important;
+      }
+
+      .btn-composer-tool {
+        width: 38px;
+        height: 38px;
+      }
+
+      /* 5. Mobile Modals & Sheets */
+      .pdf-modal-container {
+        width: 100vw !important;
+        height: 100dvh !important;
+        max-width: 100vw !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        border: none !important;
+      }
+
+      .pdf-modal-header {
+        padding: 0.65rem 0.85rem !important;
+      }
+
+      .lightbox-container {
+        max-width: 100vw !important;
+        max-height: 100dvh !important;
+        padding-top: 54px !important;
+      }
+
+      .lightbox-header {
+        top: 10px !important;
+        left: 10px !important;
+        right: 10px !important;
+        position: fixed !important;
+        background: rgba(14, 17, 24, 0.92) !important;
+        backdrop-filter: blur(8px) !important;
+        padding: 0.45rem 0.65rem !important;
+        border-radius: 8px !important;
+        border: 1px solid var(--border-subtle) !important;
+        z-index: 100;
+      }
+
+      .lightbox-body {
+        max-width: 96vw !important;
+        max-height: 80dvh !important;
+      }
+
+      .forward-card, .multisend-card {
+        width: 100% !important;
+        max-width: 100vw !important;
+        max-height: 92dvh !important;
+        border-radius: 16px 16px 0 0 !important;
+        margin-top: auto !important;
+      }
+
+      .multisend-body {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+        padding: 1rem !important;
+      }
+
+      .multisend-col-recipients {
+        border-right: none !important;
+        border-bottom: 1px solid var(--border-subtle) !important;
+        padding-right: 0 !important;
+        padding-bottom: 1rem !important;
+      }
+
+      .customer-drawer {
+        width: 100vw !important;
+        max-width: 100vw !important;
+      }
+
+      .waitlist-view {
+        padding: 1rem !important;
+      }
+
+      .waitlist-table-wrapper {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .popover-menu {
+        left: 8px !important;
+        right: 8px !important;
+        max-width: none !important;
+        width: auto !important;
+        bottom: 70px !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -2589,17 +2897,29 @@
 
     <!-- Segmented Metrics Strip & Actions -->
     <div class="header-actions">
-      <div class="live-sync-wrap" id="live-sync-indicator" title="Real-time live API sync active">
-        <span class="live-pulse-dot"></span>
-        <span class="live-sync-text">Live Sync</span>
-        <span class="live-sync-time" id="live-sync-time">Just now</span>
+      <div class="header-util-row">
+        <div class="live-sync-wrap" id="live-sync-indicator" title="Real-time live API sync active">
+          <span class="live-pulse-dot"></span>
+          <span class="live-sync-text">Live Sync</span>
+          <span class="live-sync-time" id="live-sync-time">Just now</span>
+        </div>
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+          <button id="btn-sync-now" class="btn-sync-now" type="button" title="Fetch live API updates now">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="icon-sync-spin">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            <span>Sync</span>
+          </button>
+          <button id="btn-auth-logout" class="btn-auth-logout" title="Log out" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Logout</span>
+          </button>
+        </div>
       </div>
-      <button id="btn-sync-now" class="btn-sync-now" type="button" title="Fetch live API updates now">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="icon-sync-spin">
-          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-        </svg>
-        <span>Sync</span>
-      </button>
 
       <div class="metrics-group" id="metrics-group">
         <div class="metric-card">
@@ -2637,15 +2957,6 @@
           </span>
         </div>
       </div>
-
-      <button id="btn-auth-logout" class="btn-auth-logout" title="Log out" style="display: none;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-          <polyline points="16 17 21 12 16 7"></polyline>
-          <line x1="21" y1="12" x2="9" y2="12"></line>
-        </svg>
-        <span>Logout</span>
-      </button>
     </div>
   </header>
 
@@ -2682,6 +2993,12 @@
 
         <div class="chat-header" id="chat-header" style="display: none;">
           <div class="chat-header-user">
+            <button id="btn-chat-back" class="btn-chat-back" type="button" aria-label="Back to conversations" title="Back to conversations">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </button>
             <div class="chat-header-avatar" id="chat-header-avatar">WA</div>
             <div>
               <div class="chat-user-title" id="chat-title-name">User Name</div>

@@ -33,6 +33,7 @@
   let lightboxRotation = 0;
   let activeModalName = null; // 'pdf' | 'lightbox' | 'forward' | 'multisend' | null
   let isCustomerDrawerOpen = false;
+  let mobileActiveView = 'list'; // 'list' | 'chat'
 
   // DOM Elements - Navigation & Views
   const btnViewChatEl = document.getElementById('btn-view-chat');
@@ -55,6 +56,7 @@
   const convListEl = document.getElementById('conv-list');
   const chatEmptyEl = document.getElementById('chat-empty');
   const chatHeaderEl = document.getElementById('chat-header');
+  const btnChatBackEl = document.getElementById('btn-chat-back');
   const chatTitleNameEl = document.getElementById('chat-title-name');
   const chatTitleIdEl = document.getElementById('chat-title-id');
   const chatCswPillEl = document.getElementById('chat-csw-pill');
@@ -236,6 +238,21 @@
       if (chatViewEl) chatViewEl.style.display = 'flex';
       if (btnViewWaitlistEl) btnViewWaitlistEl.classList.remove('active');
       if (btnViewChatEl) btnViewChatEl.classList.add('active');
+    }
+  }
+
+  // Mobile Single-Pane View Switcher ('list' | 'chat')
+  function setMobileView(view, pushHistory = true) {
+    mobileActiveView = view === 'chat' ? 'chat' : 'list';
+    if (chatViewEl) {
+      if (mobileActiveView === 'chat') {
+        chatViewEl.classList.add('mobile-chat-active');
+      } else {
+        chatViewEl.classList.remove('mobile-chat-active');
+      }
+    }
+    if (pushHistory && window.history && window.history.pushState) {
+      window.history.pushState({ mobileView: mobileActiveView }, '');
     }
   }
 
@@ -612,6 +629,7 @@
     if (!activeCustomer) return false;
 
     renderConversations();
+    setMobileView('chat', true);
 
     const headerAvatarEl = document.getElementById('chat-header-avatar');
     if (headerAvatarEl) headerAvatarEl.textContent = getInitials(activeCustomer.name);
@@ -1512,6 +1530,21 @@
       performLogout();
     });
 
+    // Mobile Back Button
+    btnChatBackEl?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setMobileView('list', true);
+    });
+
+    // Browser / Android Hardware Back Gesture
+    window.addEventListener('popstate', (e) => {
+      if (e.state && e.state.mobileView) {
+        setMobileView(e.state.mobileView, false);
+      } else if (mobileActiveView === 'chat') {
+        setMobileView('list', false);
+      }
+    });
+
     // Keyboard shortcuts (Escape closes modals)
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -1561,6 +1594,13 @@
       switchView(viewName);
       return activeView;
     },
+
+    setMobileView: (view) => {
+      setMobileView(view, false);
+      return mobileActiveView;
+    },
+
+    getMobileView: () => mobileActiveView,
 
     getWaitlist: () => currentWaitlist,
 
@@ -1676,6 +1716,7 @@
       return {
         isAuthenticated,
         activeView,
+        mobileView: mobileActiveView,
         activeModal: activeModalName,
         isCustomerDrawerOpen,
         stagedAttachment: stagedAttachment ? { type: stagedAttachment.type, filename: stagedAttachment.filename } : null,
