@@ -736,7 +736,7 @@
       outline: none;
     }
 
-    .composer button {
+    .composer #btn-send {
       background: var(--wa-emerald);
       color: #ffffff;
       font-weight: 600;
@@ -753,17 +753,17 @@
       box-shadow: 0 2px 8px var(--wa-emerald-glow);
     }
 
-    .composer button:hover:not(:disabled) {
+    .composer #btn-send:hover:not(:disabled) {
       background: var(--wa-emerald-hover);
       transform: translateY(-1px);
       box-shadow: 0 4px 12px var(--wa-emerald-glow);
     }
 
-    .composer button:active:not(:disabled) {
+    .composer #btn-send:active:not(:disabled) {
       transform: translateY(0);
     }
 
-    .composer button:disabled {
+    .composer #btn-send:disabled {
       background: #252a39;
       color: #64748b;
       cursor: not-allowed;
@@ -1689,21 +1689,56 @@
     .btn-composer-tool {
       width: 36px;
       height: 36px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-      display: flex;
+      min-width: 36px;
+      padding: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #94a3b8;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.15s ease;
+      box-shadow: none;
+      transition: all 0.18s ease;
       flex-shrink: 0;
     }
 
     .btn-composer-tool:hover {
-      background: rgba(0, 168, 132, 0.15);
-      border-color: rgba(0, 168, 132, 0.35);
+      background: rgba(0, 168, 132, 0.18);
+      border-color: rgba(0, 168, 132, 0.45);
+      color: #2dd4bf;
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(0, 168, 132, 0.25);
+    }
+
+    .btn-composer-tool svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      display: block;
+    }
+
+    /* Discreet message forward icon */
+    .btn-msg-fwd-icon {
+      background: transparent;
+      border: none;
+      color: inherit;
+      opacity: 0.45;
+      padding: 2px 4px;
+      margin-left: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: opacity 0.15s ease, color 0.15s ease;
+    }
+
+    .msg-bubble:hover .btn-msg-fwd-icon,
+    .btn-msg-fwd-icon:hover {
+      opacity: 1;
       color: #2dd4bf;
     }
 
@@ -2593,10 +2628,16 @@
        MOBILE RESPONSIVENESS OVERHAUL (max-width: 768px)
        ========================================================================= */
     @media (max-width: 768px) {
-      /* 1. Header Reorganization: 3 Clean Tiers */
+      /* When active chat is open on mobile, hide the global header completely to give full screen height to the chat */
+      body.mobile-chat-active header,
+      body:has(#chat-view.mobile-chat-active) header {
+        display: none !important;
+      }
+
+      /* 1. Header Reorganization: Clean Compact App Bar on Mobile List View */
       header {
-        padding: 0.5rem 0.75rem;
-        gap: 0.5rem;
+        padding: 0.3rem 0.5rem;
+        gap: 0.25rem;
         flex-direction: column;
         align-items: stretch;
       }
@@ -2606,57 +2647,75 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 0.5rem;
+        flex-wrap: nowrap;
+        gap: 0.35rem;
       }
 
       .brand-info {
         flex: 1;
-        min-width: 120px;
+        min-width: 0;
+        overflow: hidden;
       }
 
       .brand-title {
-        font-size: 0.85rem;
+        font-size: 0.82rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .brand-subtitle {
-        font-size: 0.7rem;
+        display: none;
       }
 
       .status-badge {
-        font-size: 0.7rem;
-        padding: 0.2rem 0.5rem;
+        font-size: 0.65rem;
+        padding: 0.12rem 0.4rem;
+        white-space: nowrap;
       }
 
       .view-switcher {
         width: 100%;
         display: flex;
-        gap: 0.35rem;
-        margin-top: 0.2rem;
+        gap: 0.25rem;
+        margin-top: 0;
       }
 
       .view-nav-btn {
         flex: 1;
         justify-content: center;
-        padding: 0.45rem 0.5rem;
-        font-size: 0.76rem;
-        height: 38px;
+        padding: 0.3rem 0.4rem;
+        font-size: 0.72rem;
+        height: 32px;
       }
 
       .header-actions {
         width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 0.45rem;
+        gap: 0.25rem;
         align-items: stretch;
       }
 
-      .header-actions-row {
+      .header-util-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        gap: 0.5rem;
+        gap: 0.35rem;
+      }
+
+      .live-sync-wrap {
+        padding: 0.15rem 0.4rem;
+        font-size: 0.65rem;
+        height: 25px;
+      }
+
+      .btn-sync-now,
+      .btn-auth-logout {
+        height: 25px;
+        padding: 0.15rem 0.45rem;
+        font-size: 0.7rem;
       }
 
       /* Horizontal Momentum Swipeable Metrics Strip */
@@ -2666,8 +2725,8 @@
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch;
         scroll-snap-type: x mandatory;
-        gap: 0.5rem;
-        padding: 0.35rem 0.2rem;
+        gap: 0.35rem;
+        padding: 0.1rem 0;
         scrollbar-width: none;
         box-sizing: border-box;
       }
@@ -2678,12 +2737,26 @@
 
       .metric-card {
         flex: 0 0 auto !important;
-        min-width: 135px !important;
+        min-width: 120px !important;
         scroll-snap-align: start;
-        padding: 0.45rem 0.65rem !important;
+        padding: 0.25rem 0.5rem !important;
         background: rgba(255, 255, 255, 0.04) !important;
         border: 1px solid var(--border-subtle) !important;
         border-radius: 8px !important;
+      }
+
+      .metric-label {
+        font-size: 0.58rem;
+        line-height: 1.15;
+      }
+
+      .metric-val {
+        font-size: 0.72rem;
+        line-height: 1.2;
+      }
+
+      .metric-card .progress-track {
+        display: none;
       }
 
       .metric-divider {
@@ -2773,20 +2846,43 @@
         padding: 0.5rem 0.65rem calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
       }
 
-      /* Eliminate iOS auto-zoom on input focus */
-      .composer input,
-      .composer textarea,
-      .search-box input,
-      .chat-search-bar input,
-      .forward-search-box input,
-      .multisend-search-wrap input,
-      .multisend-textarea {
-        font-size: 16px !important;
+      .composer-row {
+        gap: 0.35rem !important;
+        padding: 0.3rem 0.45rem !important;
+      }
+
+      .composer-tools {
+        gap: 0.25rem !important;
       }
 
       .btn-composer-tool {
-        width: 38px;
-        height: 38px;
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+      }
+
+      /* Compact circular mobile send button */
+      .composer #btn-send,
+      #btn-send {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+      }
+
+      #btn-send span {
+        display: none !important;
+      }
+
+      #btn-send svg {
+        width: 15px !important;
+        height: 15px !important;
+        margin: 0 !important;
       }
 
       /* 5. Mobile Modals & Sheets */

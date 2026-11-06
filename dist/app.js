@@ -254,8 +254,10 @@
     if (chatViewEl) {
       if (mobileActiveView === 'chat') {
         chatViewEl.classList.add('mobile-chat-active');
+        document.body.classList.add('mobile-chat-active');
       } else {
         chatViewEl.classList.remove('mobile-chat-active');
+        document.body.classList.remove('mobile-chat-active');
       }
     }
     if (pushHistory && window.history && window.history.pushState) {
@@ -842,7 +844,7 @@
           <div class="msg-footer">
             <span class="msg-time">${timeStr}</span>
             ${msg.direction === 'outbound' ? `<span class="msg-status ${statusClass}">• ${msg.status}</span>` : ''}
-            <button class="media-action-pill btn-fwd-msg" data-msg-id="${msg.id}" style="padding: 0.15rem 0.4rem; font-size: 0.65rem; margin-left: 0.4rem;" title="Forward this message">Forward</button>
+            ${!mediaHtml ? `<button class="btn-msg-fwd-icon btn-fwd-msg" data-msg-id="${msg.id}" title="Forward this message" type="button"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg></button>` : ''}
           </div>
         </div>
       `;
