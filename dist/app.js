@@ -251,13 +251,20 @@
   // Mobile Single-Pane View Switcher ('list' | 'chat')
   function setMobileView(view, pushHistory = true) {
     mobileActiveView = view === 'chat' ? 'chat' : 'list';
+    const headerEl = document.querySelector('header');
     if (chatViewEl) {
       if (mobileActiveView === 'chat') {
         chatViewEl.classList.add('mobile-chat-active');
         document.body.classList.add('mobile-chat-active');
+        if (headerEl && window.innerWidth <= 900) {
+          headerEl.style.display = 'none';
+        }
       } else {
         chatViewEl.classList.remove('mobile-chat-active');
         document.body.classList.remove('mobile-chat-active');
+        if (headerEl) {
+          headerEl.style.removeProperty('display');
+        }
       }
     }
     if (pushHistory && window.history && window.history.pushState) {
@@ -649,7 +656,13 @@
     composerPaneEl.style.display = 'flex';
 
     chatTitleNameEl.textContent = activeCustomer.name || activeCustomer.phoneNumber;
-    chatTitleIdEl.textContent = `ID: ${activeCustomer.id} | Phone: ${activeCustomer.phoneNumber}`;
+
+    // Subtitle formatted like WhatsApp status under contact name
+    if (activeCustomer.csw.isActive) {
+      chatTitleIdEl.innerHTML = `<span style="color:#25d366; font-weight:500;">online • Free reply ${activeCustomer.csw.remainingHours}h left</span>`;
+    } else {
+      chatTitleIdEl.innerHTML = `<span style="color:#f59e0b; font-weight:500;">Window closed • templates only</span>`;
+    }
 
     const cswClass = activeCustomer.csw.isActive ? 'csw-active' : 'csw-closed';
     chatCswPillEl.className = `conv-csw ${cswClass}`;
@@ -1555,6 +1568,16 @@
     btnChatBackEl?.addEventListener('click', (e) => {
       e.stopPropagation();
       setMobileView('list', true);
+    });
+
+    // Window resize handler (ensures header state matches screen width)
+    window.addEventListener('resize', () => {
+      const headerEl = document.querySelector('header');
+      if (mobileActiveView === 'chat' && window.innerWidth <= 900) {
+        if (headerEl) headerEl.style.display = 'none';
+      } else if (headerEl) {
+        headerEl.style.removeProperty('display');
+      }
     });
 
     // Browser / Android Hardware Back Gesture

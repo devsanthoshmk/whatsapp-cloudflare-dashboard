@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>WhatsApp Business Hub | Cloudflare Workers</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1679,45 +1682,128 @@
       color: #ffffff;
     }
 
-    /* Composer Tools & Staged Attachment */
-    .composer-tools {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
+    /* Native WhatsApp Composer */
+    .composer-row.whatsapp-composer {
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      box-shadow: none !important;
     }
 
-    .btn-composer-tool {
-      width: 36px;
-      height: 36px;
-      min-width: 36px;
-      padding: 0;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #94a3b8;
-      display: inline-flex;
+    .composer-input-pill {
+      background: #141722;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      display: flex;
       align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: none;
-      transition: all 0.18s ease;
-      flex-shrink: 0;
+      gap: 2px;
+      padding: 3px 8px;
+      flex: 1;
+      min-width: 0;
+      transition: border-color 0.2s ease, background 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .composer-input-pill:focus-within {
+      border-color: rgba(0, 168, 132, 0.45);
+      background: #181c28;
+    }
+
+    .composer-input-pill #input-msg {
+      flex: 1;
+      background: transparent !important;
+      border: none !important;
+      outline: none !important;
+      color: #f3f4f6 !important;
+      font-size: 15px !important;
+      font-family: inherit;
+      padding: 6px 4px !important;
+      min-width: 60px;
+    }
+
+    .composer-input-pill #input-msg::placeholder {
+      color: #64748b;
+    }
+
+    /* Defensively ensure .btn-composer-tool is NEVER green or rectangular */
+    .btn-composer-tool,
+    .composer .btn-composer-tool,
+    .composer-row .btn-composer-tool,
+    button.btn-composer-tool {
+      width: 34px !important;
+      height: 34px !important;
+      min-width: 34px !important;
+      padding: 0 !important;
+      border-radius: 50% !important;
+      background: transparent !important;
+      background-color: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      outline: none !important;
+      color: #94a3b8 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      flex-shrink: 0 !important;
+      transition: all 0.18s ease !important;
     }
 
     .btn-composer-tool:hover {
-      background: rgba(0, 168, 132, 0.18);
-      border-color: rgba(0, 168, 132, 0.45);
-      color: #2dd4bf;
-      transform: scale(1.05);
-      box-shadow: 0 0 10px rgba(0, 168, 132, 0.25);
+      background: rgba(0, 168, 132, 0.15) !important;
+      color: #2dd4bf !important;
     }
 
     .btn-composer-tool svg {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-      fill: none;
-      display: block;
+      width: 20px !important;
+      height: 20px !important;
+      stroke: #94a3b8 !important;
+      fill: none !important;
+      display: block !important;
+      transition: stroke 0.18s ease;
+    }
+
+    .btn-composer-tool:hover svg {
+      stroke: #2dd4bf !important;
+    }
+
+    /* Native WhatsApp Circular Send FAB */
+    .btn-send-fab,
+    #btn-send,
+    .composer #btn-send {
+      width: 42px !important;
+      height: 42px !important;
+      min-width: 42px !important;
+      border-radius: 50% !important;
+      background: var(--wa-emerald) !important;
+      color: #ffffff !important;
+      border: none !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      flex-shrink: 0 !important;
+      box-shadow: 0 2px 10px var(--wa-emerald-glow) !important;
+      padding: 0 !important;
+      transition: transform 0.18s ease, background 0.18s ease !important;
+    }
+
+    .btn-send-fab:hover:not(:disabled),
+    #btn-send:hover:not(:disabled) {
+      background: var(--wa-emerald-hover) !important;
+      transform: scale(1.05) !important;
+    }
+
+    .btn-send-fab svg,
+    #btn-send svg {
+      width: 18px !important;
+      height: 18px !important;
+      fill: #ffffff !important;
+      stroke: none !important;
+      margin-left: 2px !important;
     }
 
     /* Discreet message forward icon */
@@ -2625,13 +2711,28 @@
     }
 
     /* =========================================================================
-       MOBILE RESPONSIVENESS OVERHAUL (max-width: 768px)
+       MOBILE RESPONSIVENESS OVERHAUL (max-width: 900px)
        ========================================================================= */
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
       /* When active chat is open on mobile, hide the global header completely to give full screen height to the chat */
       body.mobile-chat-active header,
-      body:has(#chat-view.mobile-chat-active) header {
+      body:has(#chat-view.mobile-chat-active) header,
+      .mobile-chat-active header,
+      header.mobile-hidden {
         display: none !important;
+      }
+
+      #chat-view.mobile-chat-active {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        padding: 0 !important;
+      }
+
+      #chat-view.mobile-chat-active .chat-pane {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        display: flex !important;
+        flex-direction: column !important;
       }
 
       /* 1. Header Reorganization: Clean Compact App Bar on Mobile List View */
@@ -2823,9 +2924,20 @@
         gap: 0.35rem;
       }
 
+      .chat-header-actions #chat-csw-pill,
       .chat-csw {
-        font-size: 0.68rem;
-        padding: 0.25rem 0.5rem;
+        display: none !important;
+      }
+
+      .chat-header-btn span {
+        display: none !important;
+      }
+
+      .chat-header-btn {
+        width: 34px !important;
+        height: 34px !important;
+        padding: 0 !important;
+        justify-content: center !important;
       }
 
       /* 4. Messages & Composer */
@@ -3182,26 +3294,24 @@
             </div>
           </div>
 
-          <div class="composer-row">
-            <div class="composer-tools">
-              <button id="btn-attachment" class="btn-composer-tool" type="button" title="Attach image, PDF document, audio, or Vydy flyer">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                </svg>
-              </button>
+          <div class="composer-row whatsapp-composer">
+            <div class="composer-input-pill">
               <button id="btn-quick-templates" class="btn-composer-tool" type="button" title="AYUSH Store Canned Replies & Templates">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                 </svg>
               </button>
+              <input type="text" id="input-msg" placeholder="Message" autocomplete="off">
+              <button id="btn-attachment" class="btn-composer-tool" type="button" title="Attach image, PDF document, audio, or Vydy flyer">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+              </button>
             </div>
-            <input type="text" id="input-msg" placeholder="Type a message or consultation reply...">
-            <button id="btn-send">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"/>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            <button id="btn-send" class="btn-send-fab" type="button" title="Send message">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
               </svg>
-              <span>Send</span>
             </button>
           </div>
         </div>
@@ -3607,6 +3717,6 @@
   <input type="file" id="file-input-doc" accept=".pdf,application/pdf" style="display: none;">
   <input type="file" id="file-input-audio" accept="audio/*" style="display: none;">
 
-  <script src="/app.js"></script>
+  <script src="/app.js?v=20261106_wa_chat_v3"></script>
 </body>
 </html>
