@@ -81,9 +81,27 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 0.85rem;
+      flex-wrap: nowrap;
+      gap: 1rem;
       z-index: 20;
+    }
+
+    .header-top-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-top-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header-metrics-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
 
     .brand-section {
@@ -2735,129 +2753,171 @@
         flex-direction: column !important;
       }
 
-      /* 1. Header Reorganization: Clean Compact App Bar on Mobile List View */
+      /* 1. Header Reorganization: 3 Clean Mobile Tiers */
       header {
-        padding: 0.3rem 0.5rem;
-        gap: 0.25rem;
-        flex-direction: column;
-        align-items: stretch;
+        padding: 0.35rem 0.55rem !important;
+        gap: 0.3rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+
+      .header-top-bar {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        gap: 0.35rem !important;
       }
 
       .brand-section {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: nowrap;
-        gap: 0.35rem;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.35rem !important;
+        min-width: 0 !important;
+        flex: 1 !important;
       }
 
       .brand-info {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
       }
 
       .brand-title {
-        font-size: 0.82rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        font-size: 0.82rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       .brand-subtitle {
-        display: none;
+        display: none !important;
       }
 
       .status-badge {
-        font-size: 0.65rem;
-        padding: 0.12rem 0.4rem;
-        white-space: nowrap;
+        font-size: 0.65rem !important;
+        padding: 0.12rem 0.4rem !important;
+        white-space: nowrap !important;
       }
 
-      .view-switcher {
-        width: 100%;
-        display: flex;
-        gap: 0.25rem;
-        margin-top: 0;
+      .status-badge .conn-phone {
+        display: none !important;
       }
 
-      .view-nav-btn {
-        flex: 1;
-        justify-content: center;
-        padding: 0.3rem 0.4rem;
-        font-size: 0.72rem;
-        height: 32px;
-      }
-
-      .header-actions {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        align-items: stretch;
-      }
-
-      .header-util-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        gap: 0.35rem;
-      }
-
-      .live-sync-wrap {
-        padding: 0.15rem 0.4rem;
-        font-size: 0.65rem;
-        height: 25px;
+      .header-top-actions {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.35rem !important;
+        flex-shrink: 0 !important;
       }
 
       .btn-sync-now,
       .btn-auth-logout {
-        height: 25px;
-        padding: 0.15rem 0.45rem;
-        font-size: 0.7rem;
+        height: 28px !important;
+        padding: 0.2rem 0.45rem !important;
+        font-size: 0.72rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.25rem !important;
+        border-radius: 7px !important;
       }
 
-      /* Horizontal Momentum Swipeable Metrics Strip */
+      .btn-text-hide-mobile {
+        display: none !important;
+      }
+
+      /* Row 2: View Switcher (Dedicated Full-Width 3 Equal Tabs) */
+      .view-switcher {
+        width: 100% !important;
+        display: flex !important;
+        gap: 0.25rem !important;
+        margin: 0 !important;
+        padding: 2px !important;
+        background: rgba(0, 0, 0, 0.35) !important;
+        border-radius: 9px !important;
+        box-sizing: border-box !important;
+      }
+
+      .view-nav-btn {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        justify-content: center !important;
+        text-align: center !important;
+        padding: 0.35rem 0.2rem !important;
+        font-size: 0.72rem !important;
+        height: 32px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+
+      /* Row 3: Swipeable Metrics Strip & Live Sync */
+      .header-metrics-wrap {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scroll-snap-type: x mandatory !important;
+        gap: 0.35rem !important;
+        padding: 0.15rem 0.25rem 0.2rem 0.1rem !important;
+        scrollbar-width: none !important;
+        box-sizing: border-box !important;
+      }
+
+      .header-metrics-wrap::-webkit-scrollbar {
+        display: none !important;
+      }
+
+      .header-metrics-wrap .live-sync-wrap {
+        flex: 0 0 auto !important;
+        height: 28px !important;
+        padding: 0.2rem 0.45rem !important;
+        font-size: 0.68rem !important;
+        scroll-snap-align: start !important;
+      }
+
       .metrics-group {
         display: flex !important;
-        width: 100% !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch;
-        scroll-snap-type: x mandatory;
-        gap: 0.35rem;
-        padding: 0.1rem 0;
-        scrollbar-width: none;
-        box-sizing: border-box;
-      }
-
-      .metrics-group::-webkit-scrollbar {
-        display: none;
+        gap: 0.35rem !important;
+        align-items: center !important;
+        flex: 0 0 auto !important;
       }
 
       .metric-card {
         flex: 0 0 auto !important;
         min-width: 120px !important;
-        scroll-snap-align: start;
-        padding: 0.25rem 0.5rem !important;
+        scroll-snap-align: start !important;
+        padding: 0.3rem 0.5rem !important;
         background: rgba(255, 255, 255, 0.04) !important;
         border: 1px solid var(--border-subtle) !important;
         border-radius: 8px !important;
       }
 
+      .metric-card.metric-card-r2 {
+        margin-right: 1.5rem !important;
+      }
+
+      .metric-card.metric-card-r2 .metric-val {
+        white-space: nowrap !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.35rem !important;
+      }
+
       .metric-label {
-        font-size: 0.58rem;
-        line-height: 1.15;
+        font-size: 0.58rem !important;
+        line-height: 1.15 !important;
       }
 
       .metric-val {
-        font-size: 0.72rem;
-        line-height: 1.2;
+        font-size: 0.72rem !important;
+        line-height: 1.2 !important;
       }
 
       .metric-card .progress-track {
-        display: none;
+        display: none !important;
       }
 
       .metric-divider {
@@ -3062,12 +3122,94 @@
       }
 
       .waitlist-view {
-        padding: 1rem !important;
+        padding: 0.75rem 0.65rem !important;
+      }
+
+      .waitlist-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+      }
+
+      .waitlist-header-actions {
+        width: 100% !important;
+        display: flex !important;
+        gap: 0.4rem !important;
+      }
+
+      .waitlist-search-wrapper {
+        flex: 1 !important;
+      }
+
+      .waitlist-card {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
       }
 
       .waitlist-table-wrapper {
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch;
+        overflow-x: visible !important;
+      }
+
+      .waitlist-table thead {
+        display: none !important;
+      }
+
+      .waitlist-table,
+      .waitlist-table tbody,
+      .waitlist-table tr,
+      .waitlist-table td {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+
+      .waitlist-table tr {
+        background: #141722 !important;
+        border: 1px solid var(--border-subtle) !important;
+        border-radius: 12px !important;
+        margin-bottom: 0.65rem !important;
+        padding: 0.75rem 0.85rem !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+      }
+
+      .waitlist-table td {
+        padding: 0.2rem 0 !important;
+        border-bottom: none !important;
+      }
+
+      .waitlist-email {
+        font-size: 0.92rem !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        word-break: break-all !important;
+      }
+
+      .waitlist-attempts {
+        font-size: 0.74rem !important;
+        color: var(--text-secondary) !important;
+      }
+
+      .waitlist-time {
+        font-size: 0.7rem !important;
+        color: var(--text-muted) !important;
+      }
+
+      .btn-action-group {
+        display: flex !important;
+        width: 100% !important;
+        gap: 0.4rem !important;
+        margin-top: 0.45rem !important;
+      }
+
+      .btn-action-group .btn-action {
+        flex: 1 1 0 !important;
+        height: 34px !important;
+        justify-content: center !important;
+        font-size: 0.75rem !important;
+        padding: 0.4rem !important;
+        border-radius: 7px !important;
       }
 
       .popover-menu {
@@ -3083,75 +3225,78 @@
 <body>
   <!-- Header Bar with Live Limits -->
   <header>
-    <div class="brand-section">
-      <div class="brand-logo-wrap">
-        <svg viewBox="0 0 24 24">
-          <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.17c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.4c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.01 4.54-3.69 8.25-8.22 8.25z"/>
-        </svg>
+    <!-- Row 1: Brand & Top Utilities -->
+    <div class="header-top-bar">
+      <div class="brand-section">
+        <div class="brand-logo-wrap">
+          <svg viewBox="0 0 24 24">
+            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.17c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.4c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.01 4.54-3.69 8.25-8.22 8.25z"/>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <span class="brand-title">Santhosh Freelancing</span>
+          <span class="brand-subtitle">WhatsApp Cloud Hub</span>
+        </div>
+        <span class="status-badge badge-success" id="badge-conn-status">
+          <span class="pulse-dot"></span>
+          <span class="conn-text">Connected</span>
+          <span class="conn-phone">(+91 91766 50591)</span>
+        </span>
       </div>
-      <div class="brand-info">
-        <span class="brand-title">Santhosh Freelancing</span>
-        <span class="brand-subtitle">WhatsApp Cloud Hub</span>
-      </div>
-      <span class="status-badge badge-success" id="badge-conn-status">
-        <span class="pulse-dot"></span>
-        <span>Connected (+91 91766 50591)</span>
-      </span>
 
-      <!-- View Switcher -->
-      <nav class="view-switcher" id="view-switcher">
-        <button id="btn-view-chat" class="view-nav-btn active" type="button">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      <div class="header-top-actions">
+        <button id="btn-sync-now" class="btn-sync-now" type="button" title="Fetch live API updates now">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="icon-sync-spin">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
           </svg>
-          <span>Messages</span>
+          <span class="btn-text-hide-mobile">Sync</span>
         </button>
-        <button id="btn-view-waitlist" class="view-nav-btn" type="button">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        <button id="btn-auth-logout" class="btn-auth-logout" title="Log out" style="display: none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
           </svg>
-          <span>Waitlist</span>
-          <span id="badge-waitlist-count" class="badge-waitlist-pill">0</span>
+          <span class="btn-text-hide-mobile">Logout</span>
         </button>
-        <button id="btn-view-multisend" class="view-nav-btn" type="button" title="Broadcast campaign & multi-send to AYUSH customers">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <line x1="19" y1="8" x2="19" y2="14"></line>
-            <line x1="22" y1="11" x2="16" y2="11"></line>
-          </svg>
-          <span>Multi Send</span>
-        </button>
-      </nav>
+      </div>
     </div>
 
-    <!-- Segmented Metrics Strip & Actions -->
-    <div class="header-actions">
-      <div class="header-util-row">
-        <div class="live-sync-wrap" id="live-sync-indicator" title="Real-time live API sync active">
-          <span class="live-pulse-dot"></span>
-          <span class="live-sync-text">Live Sync</span>
-          <span class="live-sync-time" id="live-sync-time">Just now</span>
-        </div>
-        <div style="display: flex; gap: 0.4rem; align-items: center;">
-          <button id="btn-sync-now" class="btn-sync-now" type="button" title="Fetch live API updates now">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="icon-sync-spin">
-              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-            </svg>
-            <span>Sync</span>
-          </button>
-          <button id="btn-auth-logout" class="btn-auth-logout" title="Log out" style="display: none;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-            <span>Logout</span>
-          </button>
-        </div>
+    <!-- Row 2: View Switcher (Dedicated Full-Width 3-Tab Bar on Mobile) -->
+    <nav class="view-switcher" id="view-switcher">
+      <button id="btn-view-chat" class="view-nav-btn active" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span>Messages</span>
+      </button>
+      <button id="btn-view-waitlist" class="view-nav-btn" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        <span>Waitlist</span>
+        <span id="badge-waitlist-count" class="badge-waitlist-pill">0</span>
+      </button>
+      <button id="btn-view-multisend" class="view-nav-btn" type="button" title="Broadcast campaign & multi-send to AYUSH customers">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <line x1="19" y1="8" x2="19" y2="14"></line>
+          <line x1="22" y1="11" x2="16" y2="11"></line>
+        </svg>
+        <span>Multi Send</span>
+      </button>
+    </nav>
+
+    <!-- Row 3: Swipeable Metrics Strip & Live Sync -->
+    <div class="header-metrics-wrap">
+      <div class="live-sync-wrap" id="live-sync-indicator" title="Real-time live API sync active">
+        <span class="live-pulse-dot"></span>
+        <span class="live-sync-text">Live Sync</span>
+        <span class="live-sync-time" id="live-sync-time">Just now</span>
       </div>
 
       <div class="metrics-group" id="metrics-group">
@@ -3182,7 +3327,7 @@
 
         <div class="metric-divider"></div>
 
-        <div class="metric-card">
+        <div class="metric-card metric-card-r2">
           <span class="metric-label">R2 storage guard</span>
           <span class="metric-val" id="val-r2-storage">
             <span id="text-r2-stat">0.00 MB / 9.00 GB</span>
