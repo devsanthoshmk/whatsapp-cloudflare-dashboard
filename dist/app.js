@@ -659,9 +659,9 @@
 
     // Subtitle formatted like WhatsApp status under contact name
     if (activeCustomer.csw.isActive) {
-      chatTitleIdEl.innerHTML = `<span style="color:#25d366; font-weight:500;">online • Free reply ${activeCustomer.csw.remainingHours}h left</span>`;
+      chatTitleIdEl.innerHTML = `<span style="color:#25d366; font-weight:500;">Active window, ${activeCustomer.csw.remainingHours}h left</span>`;
     } else {
-      chatTitleIdEl.innerHTML = `<span style="color:#f59e0b; font-weight:500;">Window closed • templates only</span>`;
+      chatTitleIdEl.innerHTML = `<span style="color:#f59e0b; font-weight:500;">Window closed (templates only)</span>`;
     }
 
     const cswClass = activeCustomer.csw.isActive ? 'csw-active' : 'csw-closed';
@@ -794,7 +794,7 @@
                 </div>
                 <div class="doc-meta-col">
                   <span class="doc-title" title="${escapeHtml(cleanDocName)}">${escapeHtml(cleanDocName)}</span>
-                  <span class="doc-subtitle">PDF Document • ${cleanSize}</span>
+                  <span class="doc-subtitle">PDF, ${cleanSize}</span>
                 </div>
               </div>
               <div class="doc-card-actions">
@@ -856,7 +856,7 @@
           ${errorHtml}
           <div class="msg-footer">
             <span class="msg-time">${timeStr}</span>
-            ${msg.direction === 'outbound' ? `<span class="msg-status ${statusClass}">• ${msg.status}</span>` : ''}
+            ${msg.direction === 'outbound' ? `<span class="msg-status ${statusClass}">${msg.status}</span>` : ''}
             ${!mediaHtml ? `<button class="btn-msg-fwd-icon btn-fwd-msg" data-msg-id="${msg.id}" title="Forward this message" type="button"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg></button>` : ''}
           </div>
         </div>
@@ -923,7 +923,7 @@
     if (!pdfModalEl) return;
     activeModalName = 'pdf';
     pdfViewerFilenameEl.textContent = filename || 'Prescription_Document.pdf';
-    pdfViewerMetaEl.textContent = `PDF Document • ${size || 'Verified'}`;
+    pdfViewerMetaEl.textContent = `PDF, ${size || 'Verified'}`;
     btnPdfDownloadEl.href = url;
     btnPdfDownloadEl.setAttribute('download', filename || 'document.pdf');
     btnPdfFallbackDlEl.href = url;
@@ -1245,10 +1245,15 @@
     if (stagedFilenameEl) stagedFilenameEl.textContent = filename;
     if (stagedSizeEl) stagedSizeEl.textContent = formatBytes(size);
     if (stagedIconEl) {
-      if (type === 'image') stagedIconEl.textContent = '🖼️';
-      else if (type === 'document') stagedIconEl.textContent = '📄';
-      else if (type === 'audio') stagedIconEl.textContent = '🎙️';
-      else stagedIconEl.textContent = '📎';
+      if (type === 'image') {
+        stagedIconEl.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+      } else if (type === 'document') {
+        stagedIconEl.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+      } else if (type === 'audio') {
+        stagedIconEl.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>';
+      } else {
+        stagedIconEl.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
+      }
     }
   }
 

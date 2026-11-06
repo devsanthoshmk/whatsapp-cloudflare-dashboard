@@ -26,7 +26,7 @@
       
       --wa-emerald: #00a884;
       --wa-emerald-hover: #029474;
-      --wa-emerald-glow: rgba(0, 168, 132, 0.35);
+      --wa-emerald-glow: none;
       --wa-pulse: #25d366;
       --bubble-out: #005c4b;
       --bubble-in: #181c27;
@@ -113,12 +113,12 @@
     .brand-logo-wrap {
       width: 32px;
       height: 32px;
-      border-radius: 9px;
-      background: linear-gradient(135deg, #00a884 0%, #005c4b 100%);
+      border-radius: 8px;
+      background: #00a884;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px var(--wa-emerald-glow);
     }
 
     .brand-logo-wrap svg {
@@ -163,17 +163,11 @@
     }
 
     .pulse-dot {
-      width: 6.5px;
-      height: 6.5px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background-color: var(--wa-pulse);
-      box-shadow: 0 0 8px var(--wa-pulse);
-      animation: pulseGlow 2.4s infinite ease-in-out;
-    }
-
-    @keyframes pulseGlow {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+      flex-shrink: 0;
     }
 
     .badge-success {
@@ -905,11 +899,11 @@
     .auth-card {
       background: #14161d;
       border: 1px solid var(--border-subtle);
-      border-radius: 16px;
+      border-radius: 14px;
       padding: 2.25rem 2rem;
       width: 100%;
       max-width: 400px;
-      box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.75), 0 0 35px -5px rgba(0, 168, 132, 0.15);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -918,14 +912,14 @@
     }
 
     .auth-logo-wrap {
-      width: 52px;
-      height: 52px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #00a884 0%, #005c4b 100%);
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: #00a884;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 16px var(--wa-emerald-glow);
       margin-bottom: 1.25rem;
     }
 
@@ -1026,9 +1020,9 @@
     .btn-auth-login {
       width: 100%;
       padding: 0.75rem 1rem;
-      border-radius: 10px;
+      border-radius: 9px;
       border: none;
-      background: linear-gradient(135deg, #00a884 0%, #005c4b 100%);
+      background: var(--wa-emerald);
       color: #ffffff;
       font-weight: 600;
       font-size: 0.9rem;
@@ -1038,12 +1032,11 @@
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      transition: filter 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
-      box-shadow: 0 3px 12px var(--wa-emerald-glow);
+      transition: background 0.15s ease;
     }
 
     .btn-auth-login:hover:not(:disabled) {
-      filter: brightness(1.1);
+      background: var(--wa-emerald-hover);
     }
 
     .btn-auth-login:active:not(:disabled) {
@@ -1404,17 +1397,10 @@
     .live-pulse-dot {
       width: 7px;
       height: 7px;
-      border-radius: 999px;
+      border-radius: 50%;
       background: #10b981;
       display: inline-block;
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
-      animation: pulseSync 2.2s infinite ease-out;
-    }
-
-    @keyframes pulseSync {
-      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
-      70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      flex-shrink: 0;
     }
 
     .live-sync-text {
@@ -1957,9 +1943,17 @@
       background: rgba(255, 255, 255, 0.06);
     }
 
-    .pop-icon {
-      font-size: 1.15rem;
+    .pop-icon-svg {
+      width: 18px;
+      height: 18px;
+      stroke: #94a3b8;
+      fill: none;
       flex-shrink: 0;
+      transition: stroke 0.15s ease;
+    }
+
+    .popover-item:hover .pop-icon-svg {
+      stroke: #2dd4bf;
     }
 
     .pop-text {
@@ -2567,18 +2561,18 @@
     }
 
     .drawer-avatar {
-      width: 54px;
-      height: 54px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #00a884 0%, #005c4b 100%);
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      background: #00a884;
+      border: 1px solid rgba(255, 255, 255, 0.12);
       color: #ffffff;
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 0.25rem;
-      box-shadow: 0 4px 12px var(--wa-emerald-glow);
     }
 
     .drawer-name {
@@ -3365,8 +3359,8 @@
               <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.17c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.4c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.01 4.54-3.69 8.25-8.22 8.25z"/>
             </svg>
           </div>
-          <div class="empty-title">WhatsApp Business Live Hub</div>
-          <div class="empty-desc">Select a client conversation from the sidebar to inspect incoming messages, monitor the 24-hour service window, and send replies.</div>
+          <div class="empty-title">No conversation selected</div>
+          <div class="empty-desc">Choose a conversation from the sidebar to view messages.</div>
         </div>
 
         <div class="chat-header" id="chat-header" style="display: none;">
@@ -3424,13 +3418,15 @@
               <line x1="12" y1="9" x2="12" y2="13"/>
               <line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
-            <span>Notice: 24-hour customer service window expired. Free replies cannot be delivered. Send manually from the WhatsApp mobile app or use an approved template.</span>
+            <span>The 24-hour service window closed. Messages can only be sent as approved templates or from the WhatsApp mobile app.</span>
           </div>
 
           <!-- Staged Attachment Preview Chip -->
           <div id="staged-attachment-bar" class="staged-attachment-bar" style="display: none;">
             <div class="staged-attachment-chip">
-              <span class="staged-icon" id="staged-icon">📄</span>
+              <span class="staged-icon" id="staged-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </span>
               <div class="staged-info">
                 <span class="staged-filename" id="staged-filename">file.pdf</span>
                 <span class="staged-size" id="staged-size">420 KB</span>
@@ -3468,8 +3464,8 @@
       <div class="waitlist-container">
         <div class="waitlist-header">
           <div class="waitlist-header-left">
-            <h1 class="waitlist-title">Access Waitlist Requests</h1>
-            <p class="waitlist-subtitle">Accounts that attempted login and are pending approval</p>
+            <h1 class="waitlist-title">Waitlist requests</h1>
+            <p class="waitlist-subtitle">Accounts awaiting administrator review</p>
           </div>
           <div class="waitlist-header-actions">
             <div class="waitlist-search-wrapper">
@@ -3527,8 +3523,8 @@
           <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm0 18.17c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.4c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c.01 4.54-3.69 8.25-8.22 8.25z"/>
         </svg>
       </div>
-      <h2 class="auth-title">WhatsApp Business Hub</h2>
-      <p class="auth-subtitle">Enter administrator credentials to access live client conversations and messaging tools.</p>
+      <h2 class="auth-title">Sign in</h2>
+      <p class="auth-subtitle">Sign in to manage messages and customer conversations.</p>
       
       <div id="auth-error" class="auth-error"></div>
 
@@ -3540,8 +3536,8 @@
           </svg>
         </div>
         <div class="auth-waitlist-content">
-          <div class="auth-waitlist-title">Access Request Waitlisted</div>
-          <div class="auth-waitlist-msg" id="auth-waitlist-msg">Your account is pending administrator approval. We will review your request shortly.</div>
+          <div class="auth-waitlist-title">Access request pending</div>
+          <div class="auth-waitlist-msg" id="auth-waitlist-msg">Your account is awaiting administrator approval.</div>
         </div>
       </div>
 
@@ -3563,7 +3559,7 @@
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-          <span>Unlock Dashboard</span>
+          <span>Sign in</span>
         </button>
       </form>
     </div>
@@ -3673,8 +3669,8 @@
     <div class="modal-card multisend-card">
       <div class="modal-header">
         <div>
-          <h3 class="modal-title">Broadcast Campaign & Multi-Send</h3>
-          <p class="modal-subtitle">Send announcements, AYUSH festive offers, or health updates to multiple WhatsApp contacts</p>
+          <h3 class="modal-title">Send broadcast</h3>
+          <p class="modal-subtitle">Send a message to multiple customer contacts</p>
         </div>
         <button id="btn-multisend-close" class="modal-close-btn" type="button">✕</button>
       </div>
@@ -3700,23 +3696,23 @@
 
         <!-- Right: Composer & Attachment -->
         <div class="multisend-col-composer">
-          <span class="multisend-section-label">Message & Attachment</span>
+          <span class="multisend-section-label">Message and media</span>
           <div class="ms-template-bar">
-            <span class="ms-bar-label">AYUSH Templates:</span>
-            <button class="btn-tag btn-template-tag" data-template="festive_offer" type="button">Festive 10% OFF</button>
-            <button class="btn-tag btn-template-tag" data-template="prescription_rcvd" type="button">Prescription Intake</button>
-            <button class="btn-tag btn-template-tag" data-template="ayurvedic_consult" type="button">Doctor Consult</button>
+            <span class="ms-bar-label">Templates:</span>
+            <button class="btn-tag btn-template-tag" data-template="festive_offer" type="button">Festive offer</button>
+            <button class="btn-tag btn-template-tag" data-template="prescription_rcvd" type="button">Prescription intake</button>
+            <button class="btn-tag btn-template-tag" data-template="ayurvedic_consult" type="button">Consultation</button>
           </div>
           <textarea id="input-ms-text" class="multisend-textarea" placeholder="Type broadcast message..." rows="5"></textarea>
           
           <div class="ms-attachment-section">
-            <span class="ms-bar-label">Attachment (Optional):</span>
+            <span class="ms-bar-label">Attachment (optional):</span>
             <div class="ms-attachment-choices">
               <button id="btn-ms-attach-flyer" class="btn-ms-attachment" type="button">
-                <span>🌿 Attach Vydy Festive AYUSH Flyer</span>
+                <span>Attach festive flyer</span>
               </button>
               <label class="btn-ms-attachment">
-                <span>📁 Upload Custom Media</span>
+                <span>Upload media</span>
                 <input type="file" id="ms-file-input" style="display: none;" accept="image/*,.pdf">
               </label>
             </div>
@@ -3736,7 +3732,7 @@
 
           <div class="modal-footer" style="padding: 0; margin-top: auto; background: transparent; border-top: none;">
             <button id="btn-ms-cancel" class="modal-tool-btn" type="button">Cancel</button>
-            <button id="btn-ms-send" class="modal-tool-btn primary" type="button" disabled>Send Broadcast (0 recipients)</button>
+            <button id="btn-ms-send" class="modal-tool-btn primary" type="button" disabled>Send broadcast (0 recipients)</button>
           </div>
         </div>
       </div>
@@ -3746,7 +3742,7 @@
   <!-- Customer Details Drawer -->
   <aside id="customer-drawer" class="customer-drawer" style="display: none;">
     <div class="drawer-header">
-      <span class="drawer-title">Customer Information</span>
+      <span class="drawer-title">Customer details</span>
       <button id="btn-close-drawer" class="drawer-close-btn" type="button">✕</button>
     </div>
     <div class="drawer-body">
@@ -3758,19 +3754,19 @@
       </div>
 
       <div class="drawer-section">
-        <span class="drawer-section-title">Customer Service Window</span>
+        <span class="drawer-section-title">Service window</span>
         <div class="drawer-card">
           <div class="csw-countdown-row">
-            <span class="csw-countdown-label">Window Status:</span>
+            <span class="csw-countdown-label">Window status:</span>
             <span class="badge badge-success" id="drawer-csw-status">Active (Organic)</span>
           </div>
           <div class="csw-countdown-clock" id="drawer-csw-clock">23h 48m 12s remaining</div>
-          <div class="csw-countdown-hint">Free service replies permitted within this window.</div>
+          <div class="csw-countdown-hint">Free replies allowed within this window.</div>
         </div>
       </div>
 
       <div class="drawer-section">
-        <span class="drawer-section-title">AYUSH Store Tags</span>
+        <span class="drawer-section-title">Tags</span>
         <div class="drawer-tags-wrap" id="drawer-tags-wrap">
           <span class="tag-pill tag-emerald">AYUSH Customer</span>
           <span class="tag-pill tag-amber">Festive Offer</span>
@@ -3779,10 +3775,10 @@
       </div>
 
       <div class="drawer-section">
-        <span class="drawer-section-title">Pharmacist Notes</span>
-        <textarea id="drawer-notes-input" class="drawer-notes-textarea" placeholder="Record patient allergy notes, prescription details, or medicine preferences..." rows="4"></textarea>
+        <span class="drawer-section-title">Notes</span>
+        <textarea id="drawer-notes-input" class="drawer-notes-textarea" placeholder="Add notes on customer preferences, prescriptions, or allergies." rows="4"></textarea>
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.35rem;">
-          <button id="btn-save-drawer-notes" class="btn-subtle-sm" type="button">Save Notes</button>
+          <button id="btn-save-drawer-notes" class="btn-subtle-sm" type="button">Save notes</button>
           <span id="drawer-notes-saved-msg" class="drawer-saved-msg" style="display: none;">Saved</span>
         </div>
       </div>
@@ -3792,67 +3788,67 @@
   <!-- Attachment Popover Menu -->
   <div id="attachment-popover" class="popover-menu" style="display: none;">
     <button class="popover-item" id="pop-attach-image" type="button">
-      <span class="pop-icon">🖼️</span>
+      <svg class="pop-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       <div class="pop-text">
         <strong>Image</strong>
         <small>Photos, prescription scans, product pictures</small>
       </div>
     </button>
     <button class="popover-item" id="pop-attach-doc" type="button">
-      <span class="pop-icon">📄</span>
+      <svg class="pop-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       <div class="pop-text">
-        <strong>Document / PDF</strong>
+        <strong>Document</strong>
         <small>Medical reports, brochures, invoices</small>
       </div>
     </button>
     <button class="popover-item" id="pop-attach-audio" type="button">
-      <span class="pop-icon">🎙️</span>
+      <svg class="pop-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
       <div class="pop-text">
-        <strong>Voice / Audio Note</strong>
+        <strong>Audio note</strong>
         <small>Voice consultation or spoken instruction</small>
       </div>
     </button>
     <div class="popover-divider"></div>
     <button class="popover-item" id="pop-attach-flyer" type="button">
-      <span class="pop-icon">🌿</span>
+      <svg class="pop-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
       <div class="pop-text">
-        <strong>Vydy Festive AYUSH Flyer</strong>
-        <small>Festive 10% OFF online store catalog</small>
+        <strong>Festive flyer</strong>
+        <small>Store catalog and wellness promotion</small>
       </div>
     </button>
   </div>
 
-  <!-- AYUSH Templates Popover Menu -->
+  <!-- Templates Popover Menu -->
   <div id="templates-popover" class="popover-menu" style="display: none;">
-    <div class="popover-header">AYUSH Canned Responses</div>
+    <div class="popover-header">Quick templates</div>
     <button class="popover-item" data-template="festive_offer" type="button">
       <div class="pop-text">
-        <strong>Festive Wellness Offer (10% OFF)</strong>
-        <small>Special festive AYUSH discount announcement</small>
+        <strong>Festive offer (10% off)</strong>
+        <small>Store discount announcement</small>
       </div>
     </button>
     <button class="popover-item" data-template="prescription_rcvd" type="button">
       <div class="pop-text">
-        <strong>Prescription Received</strong>
-        <small>Confirmation that pharmacist is verifying intake</small>
+        <strong>Prescription received</strong>
+        <small>Confirmation of prescription verification</small>
       </div>
     </button>
     <button class="popover-item" data-template="order_dispatched" type="button">
       <div class="pop-text">
-        <strong>Order Dispatched</strong>
-        <small>Medicine parcel shipping and tracking update</small>
+        <strong>Order dispatched</strong>
+        <small>Parcel shipping and tracking update</small>
       </div>
     </button>
     <button class="popover-item" data-template="ayurvedic_consult" type="button">
       <div class="pop-text">
-        <strong>Doctor Consultation Intake</strong>
-        <small>Ayurvedic wellness consultation scheduling</small>
+        <strong>Consultation intake</strong>
+        <small>Doctor consultation scheduling</small>
       </div>
     </button>
     <button class="popover-item" data-template="store_hours" type="button">
       <div class="pop-text">
-        <strong>Operating Hours & Support</strong>
-        <small>Mon-Sat 9 AM - 8 PM IST store availability</small>
+        <strong>Operating hours</strong>
+        <small>Support availability</small>
       </div>
     </button>
   </div>
